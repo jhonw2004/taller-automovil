@@ -206,7 +206,7 @@ El proyecto Laravel ya no es un esqueleto:
 ## Próximos pasos sugeridos
 
 1. ~~Commitear y pushear el código de implementación de `017` y `001`~~ **Hecho** (commit `eca323c` en `origin/specs/planificacion`).
-2. ~~Implementar `002-roles-permisos`~~ **Backend hecho** (esta sesión, sin commitear todavía — preguntar al usuario antes de commitear/pushear).
+2. ~~Implementar `002-roles-permisos`~~ **Hecho** (commit `08c2d90` en `origin/specs/planificacion`).
 3. Retomar `017-infraestructura-sistema`: `SetTallerActivo` (setear `taller_id` activo en sesión tras login/selector), paneles Filament personalizados (paleta, tenancy real con `->tenant()`), rutas API/web. El seeding ya está resuelto.
 4. Implementar la UI (Filament Resources) de `001` y `002` en algún punto — quedaron con backend completo pero sin interfaz, igual que estaba `001`. No es bloqueante para seguir con `003` si se prefiere UI-al-final, pero sí bloquea marcar esos specs como `implemented`.
 5. Seguir en orden de dependencia: `003` → `004` → `005` + `016` → `006` → `007`…`015`. Al llegar a `003`, recordar las dos brechas estructurales documentadas arriba (FK de `roles`/`asignaciones_rol` hacia el prototipo de `talleres`, y la decisión pendiente sobre `MARKETPLACE_USER`).
