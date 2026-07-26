@@ -2,7 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Erp\Widgets\TenantSwitcher;
 use App\Http\Middleware\CheckSessionExpiration;
+use App\Http\Middleware\ForzarCambioPasswordMiddleware;
+use App\Http\Middleware\SetTallerActivo;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -10,7 +13,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -29,8 +31,27 @@ class ErpPanelProvider extends PanelProvider
             ->path('erp')
             ->login()
             ->authGuard('sistema')
+            // Paleta Awesomic — misma paleta que AdminPanelProvider, ver notas ahí.
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => '#09090b',    // obsidian
+                'secondary' => '#18181b',  // graphite
+                'danger' => '#ff5a00',     // ember
+                'warning' => '#ff5a00',
+                'success' => '#22c55e',
+                'info' => '#52525b',       // steel
+                // Array literal, no closure: ver nota en AdminPanelProvider.
+                'gray' => [
+                    50 => '#f4f4f5',  // paper
+                    100 => '#ececee', // cloud
+                    200 => '#d4d4d8', // mist
+                    300 => '#a1a1aa', // ash
+                    400 => '#71717a', // fog
+                    500 => '#52525b', // steel
+                    600 => '#3f3f46', // iron
+                    700 => '#27272a', // slate
+                    800 => '#18181b', // graphite
+                    900 => '#09090b', // obsidian
+                ],
             ])
             ->discoverResources(in: app_path('Filament/Erp/Resources'), for: 'App\Filament\Erp\Resources')
             ->discoverPages(in: app_path('Filament/Erp/Pages'), for: 'App\Filament\Erp\Pages')
@@ -41,6 +62,7 @@ class ErpPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
+                TenantSwitcher::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -56,6 +78,11 @@ class ErpPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 CheckSessionExpiration::class,
+                // NO se usa ->tenant() nativo de Filament (decisión 2026-07-26): ya existe
+                // BelongsToTaller + sesión funcionando y probado; usar ambos duplicaría la
+                // fuente de verdad del tenant activo. SetTallerActivo resuelve la sesión.
+                SetTallerActivo::class,
+                ForzarCambioPasswordMiddleware::class.':erp',
             ]);
     }
 }

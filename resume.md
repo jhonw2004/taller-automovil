@@ -1,6 +1,48 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-26 (cuarta sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (quinta sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-26 (quinta sesión): UI real de 017/001/002/003 (107/107 tests verdes)
+
+El usuario pidió cerrar todo lo pendiente de UI antes de arrancar `004-solicitud-alta-taller`. Alcance confirmado explícitamente: terminar `017-infraestructura-sistema` (middleware, paneles, paleta) + construir los Resources de Filament pendientes de `001`/`002`/`003`. Plan completo en el historial de la sesión (no quedó archivo de plan en el repo, era `~/.claude/plans/`).
+
+**Housekeeping de documentación primero** (varios documentos asumían `spatie/laravel-permission`, removido desde la sesión de `002`, o dejaban decisiones sin resolver):
+- `constitution.md` §1 y §5 actualizados: roles/permisos 100% custom (ya no menciona Spatie), paleta Awesomic real en vez de la línea azul-marino/naranja obsoleta.
+- `017-infraestructura-sistema/plan.md`: corregido el bloque de `SetTallerActivo` (ya no llama a `Spatie\Permission\PermissionRegistrar`, que no existe), paths de `AdminPanelProvider` a `Filament/Admin/...`, y **un bug real en el propio plan** (`->colors([... 'gray' => fn () => [...]])` — envolver el valor de `gray` en una closure hace explotar `ColorManager::getColors()` con `array_map(): Argument #2 must be of type array, Closure given`; el array debe ir plano). `017-tasks.md`, `002-plan.md`/`tasks.md`, `003-tasks.md` actualizados para reflejar el estado real.
+
+**Decisiones de arquitectura tomadas (documentadas en el código, no solo aquí):**
+1. **No se usa `->tenant()` nativo de Filament** — ya existe `BelongsToTaller` + sesión funcionando; usar ambos duplicaría la fuente de verdad del tenant activo.
+2. **`SetTallerActivo` solo en `/erp`, no en `/admin`** — el Super Admin no opera "dentro" de un taller.
+3. **Autorización de Resources vía `canViewAny()`/`canCreate()`/`canEdit()`/`canDelete()` estáticos** que llaman a `tienePermiso()`/`esSuperAdmin()` directamente — no Policies de Laravel (no existían, y el catálogo de permisos ya resuelve la granularidad).
+4. **`AdminPanelProvider` ahora descubre en `app/Filament/Admin/...`** (antes `app/Filament/Resources` a secas, inconsistente con `Erp/...`).
+5. **Paleta Awesomic: solo el array `->colors([...])` de Filament, sin los CSS theme files (`viteTheme()`)** — eso se hace junto con `005`+`016` per `AGENTS.md`.
+6. **Nueva Action `CambiarEstadoTallerAction`** (no existía): transiciona `estado` ACTIVO/INACTIVO/SUSPENDIDO, solo Super Admin (único permiso del catálogo para esto es `admin.talleres.suspender`).
+7. **`TallerResource` de `/erp` es de un solo registro** (el propio taller activo), no un listado — `canCreate()=false`, `canDelete()=false`.
+
+**Código nuevo:**
+- `app/Http/Middleware/SetTallerActivo.php` — resuelve `session('taller_activo_id')` desde `asignacionesVigentes()`. No maneja el caso "cero talleres": `Filament\Http\Middleware\Authenticate` ya lo bloquea con 403 antes vía `canAccessPanel()` (mismo criterio), así que ese branch habría sido código muerto — se sacó tras confirmarlo con un test.
+- `app/Http/Middleware/ForzarCambioPasswordMiddleware.php` — bloquea navegación si `debe_cambiar_password` o password expirada, registrado en ambos paneles con el id de panel como parámetro de ruta (`:admin`/`:erp`).
+- `app/Filament/Concerns/InteractsWithCambioPassword.php` + `App\Filament\Admin\Pages\CambiarPassword` / `App\Filament\Erp\Pages\CambiarPassword` — resuelve el pendiente de `001` ("pantalla de cambio de contraseña obligatorio"). Rate limit propio `3/1min` (`WithRateLimiting`), reusa `CambiarPasswordAction` ya existente.
+- `app/Filament/Erp/Widgets/TenantSwitcher.php` — solo visible si el usuario tiene >1 taller vigente.
+- `AdminPanelProvider`/`ErpPanelProvider` personalizados: paleta Awesomic, middlewares nuevos.
+- **002**: `App\Filament\Admin\Resources\PermisoResource` (catálogo, solo Super Admin), `App\Filament\Admin\Resources\RolResource` (roles globales, gate `admin.roles.gestionar`), `App\Filament\Erp\Resources\RolResource` (roles del taller activo, gates `roles.ver/crear/editar/eliminar`), `App\Filament\Erp\Resources\AsignacionRolResource` (formulario de asignación que invoca `AsignarRolAction` en vez de `Eloquent::create()` directo, gate `usuarios.gestionar`).
+- **003**: `app/Actions/Talleres/CambiarEstadoTallerAction.php` (nueva), `App\Filament\Erp\Resources\TallerResource` (edición del taller activo, tabs datos/ubicación/categorías/horarios, `visible_en_mapa` fuera del form — se cambia con un Action dedicado que invoca `CambiarVisibilidadTallerAction`), `App\Filament\Admin\Resources\TallerResource` (listado global, acciones suspender/activar/cambiar propietario, soft delete con advertencia estática), `App\Filament\Admin\Resources\CategoriaResource` (catálogo simple).
+- **32 tests Pest nuevos**: `tests/Feature/Sistema/SetTallerActivoMiddlewareTest.php`, `ForzarCambioPasswordTest.php`, `tests/Feature/Talleres/CambiarEstadoTallerActionTest.php`, `tests/Feature/Roles/ResourcesAutorizacionTest.php`, `tests/Feature/Talleres/ResourcesAutorizacionTest.php` — cubren autorización (con/sin permiso, cruce entre talleres) y smoke tests HTTP reales de cada página nueva (index/create/edit) para los 7 Resources.
+
+### Bugs reales encontrados durante esta sesión (no solo de los tests)
+
+1. **`->colors([... 'gray' => fn () => [...]])` rompía ambos paneles** con un 500 real (`array_map(): Argument #2 must be of type array, Closure given`) — el bug estaba en el propio `017-plan.md`, nunca se había ejecutado antes. Corregido a array plano.
+2. **`Page::getUrl()` sin `panel:` explícito resuelve contra el panel `->default()` (admin) fuera de una request ya enrutada** — `ForzarCambioPasswordMiddleware` generaba la URL de `/admin/cambiar-password` incluso cuando corría dentro de `/erp`, porque ambas páginas comparten el mismo slug relativo `cambiar-password`. Corregido pasando `panel: $panelId` explícito en el middleware (y en los tests).
+3. **Confirmado (no es bug, pero no obvio):** `tienePermiso()` no da acceso automático solo por tener el rol `super-admin` — el catálogo de permisos hay que adjuntarlo al rol explícitamente (`RolSistemaSeeder` sí lo hace en producción, `Permiso::pluck('slug')->all()`). Varios tests fallaron al principio por crear un rol `super-admin` "pelado" sin permisos adjuntos.
+
+### Qué falta (fuera de alcance explícito de esta sesión)
+
+- Rutas `routes/api.php`/`routes/web.php` de `017` — bloqueadas por controllers de `005`/`006`, que no existen todavía. No se tocan sin romper el orden estricto de `AGENTS.md`.
+- CSS/tema Tailwind completo de `016-ui-design-system` (tokens, radii, tipografía) — se hace junto con `005`.
+- Listener de recálculo de `calificacion_promedio` — depende de `Resena` (`006`).
+- Conteo real de "entidades hijas activas" antes de soft-delete de un taller — depende de modelos de `007+`; el modal de advertencia por ahora tiene texto estático.
+- Verificación visual en navegador real: se hizo un smoke test con `php artisan serve` + `curl` contra la BD de desarrollo (confirmando 200 en `/admin/login` y `/erp/login`, y que la paleta Awesomic se aplica — aparece `oklch(...)` en el HTML, no el azul/ámbar default), pero **no hubo un click-through completo en un navegador real** (`claude-in-chrome` no está disponible en esta sesión). Los 107 tests Pest sí ejercitan un render HTTP completo (200 OK) de cada página nueva en ambos paneles.
+- ~~001/002/003 pueden marcarse `status: implemented`~~ **Hecho**: el usuario lo confirmó, `spec.md` de las tres features actualizado (`status: implemented`) el mismo día, después de esta sesión.
 
 ## Qué se hizo el 2026-07-26 (cuarta sesión): 003-gestion-talleres (backend completo + 28 tests verdes, total 75/75)
 
@@ -185,13 +227,13 @@ Las 17 features están numeradas por orden de dependencia (`depends_on` en el fr
 
 El proyecto Laravel ya no es un esqueleto:
 - **Stack instalado**: Filament v5.7.3, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton. **`spatie/laravel-permission` fue instalado y luego removido** (ver sesión 2026-07-26 tercera) — roles/permisos son 100% custom, no depende de ese paquete.
-- **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Seeding de permisos/roles/Super Admin **ya hecho** (ver 002 abajo). Pendiente: `SetTallerActivo`, paneles Filament personalizados (paleta, tenancy), rutas API/web, migración de reemplazo de `talleres`.
-- **001-identidad-autenticacion (backend)**: 6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas. **26/26 tests verdes**.
-- **002-roles-permisos (backend)**: 4 migraciones + modelos (`Rol`, `Permiso`, `AsignacionRol`), `AsignarRolAction`, `UsuarioSistema::tienePermiso()`/`esSuperAdmin()`/`canAccessPanel()` ya resuelto. Catálogo de 64 permisos + 9 roles de sistema seedeados, primer Super Admin creado. **21/21 tests verdes**. UI (Filament Resources) pendiente — mismo patrón que 001.
-- **003-gestion-talleres (backend)**: migración de reemplazo de `talleres` (esquema completo: slug, estado, visible_en_mapa, calificación, soft delete) + `categorias`/`talleres_categorias`/`talleres_horarios`. Modelos `Taller` (con `HasGeolocation`+`HasSlug`+`SoftDeletes`), `Categoria`, `TallerHorario`. `CambiarVisibilidadTallerAction`/`CambiarPropietarioTallerAction`. `BelongsToTallerScope` ya excluye hijas de talleres soft-deleteados. **28/28 tests verdes**. UI (Filament Resources) y el listener de recálculo de calificación (depende de `Resena`, spec `006`) pendientes — ver sección de la cuarta sesión arriba para el detalle completo de qué falta y por qué.
-- **Total: 75/75 tests Pest verdes**, `laravel/pint` sin pendientes.
+- **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Seeding de permisos/roles/Super Admin hecho. **`SetTallerActivo` + `ForzarCambioPasswordMiddleware` + paneles Filament personalizados (paleta Awesomic) — hecho en la quinta sesión.** Pendiente: rutas API/web (bloqueadas por `005`/`006`), CSS/tema Tailwind completo (junto con `016`+`005`).
+- **001-identidad-autenticacion**: backend (6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas) + **UI de cambio de contraseña obligatorio (quinta sesión)**. 26 tests de backend + cubierto por los tests de middleware de la quinta sesión.
+- **002-roles-permisos**: backend (4 migraciones + modelos `Rol`/`Permiso`/`AsignacionRol`, `AsignarRolAction`, `tienePermiso()`/`esSuperAdmin()`/`canAccessPanel()`, catálogo de 64 permisos + 9 roles de sistema seedeados) + **UI (quinta sesión): `PermisoResource`, `RolResource` (admin+erp), `AsignacionRolResource`**. 21 tests de backend + 12 tests de autorización/render de Resources.
+- **003-gestion-talleres**: backend (migración de reemplazo de `talleres`, `categorias`/`talleres_categorias`/`talleres_horarios`, modelos `Taller`/`Categoria`/`TallerHorario`, `CambiarVisibilidadTallerAction`/`CambiarPropietarioTallerAction`) + **nueva Action `CambiarEstadoTallerAction` y UI (quinta sesión): `TallerResource` (erp+admin), `CategoriaResource`**. 28 tests de backend + 12 tests de `CambiarEstadoTallerAction`/autorización de Resources. Pendiente: listener de recálculo de calificación (depende de `Resena`, spec `006`), conteo real de hijas activas antes de soft-delete (depende de `007+`).
+- **Total: 107/107 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) y la ruta prototipo `GET /api/talleres` (`TallerController@index`) se actualizaron para no romper con el esquema nuevo.
-- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` commiteado y pusheado (`08c2d90`). Código de `003` commiteado y pusheado (`dee42c2`). **Todo el código hasta `003` está en `origin/specs/planificacion`.**
+- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` commiteado y pusheado (`08c2d90`). Código de `003` commiteado y pusheado (`dee42c2`). **El código de la quinta sesión (UI de 017/001/002/003) todavía NO está commiteado** — pendiente de confirmar con el usuario antes de commitear/pushear.
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -234,10 +276,10 @@ El proyecto Laravel ya no es un esqueleto:
 1. ~~Commitear y pushear el código de implementación de `017` y `001`~~ **Hecho** (commit `eca323c` en `origin/specs/planificacion`).
 2. ~~Implementar `002-roles-permisos`~~ **Hecho** (commit `08c2d90` en `origin/specs/planificacion`).
 3. ~~Implementar `003-gestion-talleres`~~ **Hecho** (commit `dee42c2` en `origin/specs/planificacion`).
-4. Retomar `017-infraestructura-sistema`: `SetTallerActivo` (setear `taller_id` activo en sesión tras login/selector), paneles Filament personalizados (paleta, tenancy real con `->tenant()`), rutas API/web. El seeding ya está resuelto.
-5. Implementar la UI (Filament Resources) de `001`, `002` y `003` en algún punto — quedaron con backend completo pero sin interfaz. No es bloqueante para seguir en orden si se prefiere UI-al-final, pero sí bloquea marcar esos specs como `implemented`.
+4. ~~Retomar `017-infraestructura-sistema`: `SetTallerActivo`, paneles Filament personalizados (paleta)~~ **Hecho** (quinta sesión). Rutas API/web siguen bloqueadas por `005`/`006` (no tocar antes).
+5. ~~Implementar la UI (Filament Resources) de `001`, `002` y `003`~~ **Hecho** (quinta sesión, 107/107 tests). **Código todavía sin commitear** — confirmar con el usuario antes de commitear/pushear.
 6. Seguir en orden de dependencia: `004-solicitud-alta-taller` → `005` + `016` → `006` → `007`…`015`. Al llegar a `006-resenas-favoritos`, recordar dos cosas pendientes de sesiones previas: (a) implementar el listener de recálculo de `calificacion_promedio`/`cantidad_resenas` de `Taller` sobre eventos de `Resena` (columnas y defaults ya listos desde `003`), y (b) decidir cómo asignar el rol `MARKETPLACE_USER` (recomendación ya documentada: chequear permisos `marketplace.*` sin pasar por `asignaciones_rol`, ver brecha estructural de la tercera sesión más abajo).
-7. Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented` en el frontmatter de su `spec.md` (no antes) — ver por qué 001, 002 y 003 siguen en `draft` pese a tener backend probado.
+7. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002 y 003** (confirmado por el usuario tras la quinta sesión). El commit/push de todo el código de esta sesión queda a cargo del usuario, no se hizo desde el agente.
 
 ## Cómo navegar si eres un agente retomando esto
 

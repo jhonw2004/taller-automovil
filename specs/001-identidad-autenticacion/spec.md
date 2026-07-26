@@ -1,6 +1,6 @@
 ---
 id: 001-identidad-autenticacion
-status: draft
+status: implemented
 depends_on: []
 resumen: "Separación estricta entre identidad marketplace (login solo Google) e identidad sistema (usuario/contraseña con política de seguridad: expiración, rate limiting, bloqueo, sesión por inactividad)."
 ---

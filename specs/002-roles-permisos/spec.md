@@ -1,6 +1,6 @@
 ---
 id: 002-roles-permisos
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion]
 resumen: "Catálogo global de permisos y roles (globales o por taller) asignables a usuarios sistema, con reglas estrictas de ámbito."
 ---

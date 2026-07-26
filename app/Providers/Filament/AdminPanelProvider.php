@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\CheckSessionExpiration;
+use App\Http\Middleware\ForzarCambioPasswordMiddleware;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -10,7 +11,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -30,15 +30,37 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->authGuard('sistema')
+            // Paleta Awesomic (specs/016-ui-design-system/plan.md). El array `->colors([...])` es
+            // el único mapeo de color implementado en esta sesión — los tokens Tailwind/CSS
+            // completos (`->viteTheme()`) se implementan junto con 005, ver 017-plan.md §2.
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => '#09090b',    // obsidian
+                'secondary' => '#18181b',  // graphite
+                'danger' => '#ff5a00',     // ember
+                'warning' => '#ff5a00',
+                'success' => '#22c55e',
+                'info' => '#52525b',       // steel
+                // Array literal, no closure: ColorManager::getColors() solo evalúa como closure
+                // el `$colors` completo pasado a `->colors()`, no valores individuales por color.
+                'gray' => [
+                    50 => '#f4f4f5',  // paper
+                    100 => '#ececee', // cloud
+                    200 => '#d4d4d8', // mist
+                    300 => '#a1a1aa', // ash
+                    400 => '#71717a', // fog
+                    500 => '#52525b', // steel
+                    600 => '#3f3f46', // iron
+                    700 => '#27272a', // slate
+                    800 => '#18181b', // graphite
+                    900 => '#09090b', // obsidian
+                ],
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\Filament\Admin\Resources')
+            ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\Filament\Admin\Pages')
             ->pages([
                 Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\Filament\Admin\Widgets')
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
@@ -57,6 +79,10 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 CheckSessionExpiration::class,
+                // SetTallerActivo NO va aquí (decisión 2026-07-26): el Super Admin no opera
+                // "dentro" de un taller, su autorización ya se resuelve con esSuperAdmin() en
+                // canAccessPanel(). Ver ErpPanelProvider.
+                ForzarCambioPasswordMiddleware::class.':admin',
             ]);
     }
 }

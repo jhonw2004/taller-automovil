@@ -57,10 +57,11 @@
 
 ## Implementación
 
-- `spatie/laravel-permission` con `'teams' => true`, `'team_foreign_key' => 'taller_id'` (`config/permission.php`). El modelo `Rol`/`Permiso` propios se mapean sobre las tablas de Spatie o se usan directamente los modelos de Spatie renombrados vía `config/permission.php` (`models.role`, `models.permission`) — decisión de implementación: usar los modelos y tablas nativas de Spatie en vez de duplicar tablas custom si el naming en español es solo cosmético; si se requiere naming exacto en español (`roles`, `permisos`, `roles_permisos`), publicar migración y renombrar columnas manteniendo la lógica de `teams`.
-- Middleware `role:` y `permission:` de Spatie en rutas del ERP.
-- `filament/spatie-laravel-permission-plugin`: UI de asignación de roles/permisos filtrada por team (taller) activo.
-- Resolución de "team" activo: listener que setea `setPermissionsTeamId(session('taller_activo_id'))` en cada request autenticado del guard `sistema`.
+**Actualizado 2026-07-26 — decisión de arquitectura confirmada con el usuario:** todo lo de abajo (`spatie/laravel-permission`, `filament/spatie-laravel-permission-plugin`, `setPermissionsTeamId()`) fue descartado. Implementación real: modelos Eloquent 100% custom (`App\Models\Rol`, `Permiso`, `AsignacionRol`, tablas propias `roles`/`permisos`/`roles_permisos`/`asignaciones_rol`), porque los criterios de aceptación exigen columnas de negocio en la asignación (`vigente_desde`/`vigente_hasta`, `asignado_por_usuario_sistema_id`, `activo` por asignación) que el pivot nativo de Spatie no soporta sin duplicar lógica en una tabla paralela. Ver `constitution.md` §1.
+
+- El "team"/taller activo se resuelve leyendo `session('taller_activo_id')` directamente (middleware `App\Http\Middleware\SetTallerActivo`, spec `017`), no con `setPermissionsTeamId()`.
+- Autorización de rutas/Resources del ERP: cada Filament Resource implementa `canViewAny()`/`canCreate()`/`canEdit()`/`canDelete()` estáticos que llaman a `$user->tienePermiso('modulo.accion', $tallerId)` o `$user->esSuperAdmin()` — no hay middleware `role:`/`permission:` de Spatie ni Policies de Laravel.
+- UI de asignación de roles/permisos: **no** se instaló `filament/spatie-laravel-permission-plugin` (dependía de Spatie). Se construyeron Resources propios sobre `AsignarRolAction`: `App\Filament\Admin\Resources\PermisoResource` (catálogo, solo Super Admin), `App\Filament\Admin\Resources\RolResource` (roles globales) y `App\Filament\Erp\Resources\RolResource` (roles del taller activo), `App\Filament\Erp\Resources\AsignacionRolResource` (formulario de asignación filtrado por taller activo).
 
 ## Validación de ámbito (Form Request / Action)
 

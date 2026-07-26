@@ -165,7 +165,11 @@ class AdminPanelProvider extends PanelProvider
                 'warning' => '#ff5a00',
                 'success' => '#22c55e',
                 'info' => '#52525b',       // steel
-                'gray' => fn () => [
+                // (Corregido 2026-07-26: `ColorManager::getColors()` solo acepta un array plano
+                // o un string por color — envolver el valor de 'gray' en un `fn () => [...]`
+                // como traía la versión original de este bloque causa
+                // `array_map(): Argument #2 ($array) must be of type array, Closure given`.)
+                'gray' => [
                     50 => '#f4f4f5',  // paper
                     100 => '#ececee', // cloud
                     200 => '#d4d4d8', // mist
@@ -181,17 +185,24 @@ class AdminPanelProvider extends PanelProvider
             ->middleware([
                 'auth:sistema',
                 'throttle:5,1',
-                SetTallerActivo::class,  // middleware multi-tenant
+                // SetTallerActivo NO va en /admin (decisión 2026-07-26): el Super Admin no opera "dentro"
+                // de un taller, su autorización ya se resuelve con esSuperAdmin() en canAccessPanel().
             ])
             ->authMiddleware([
                 'auth:sistema',
+                ForzarCambioPasswordMiddleware::class,  // sí aplica: un Super Admin también puede tener debe_cambiar_password=true
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
-            // Filament no tiene un método `->spatiePermission()` — no existe en ninguna versión.
-            // La autorización se integra vía Policies de Laravel (que consultan $user->can('permiso.slug'),
-            // resuelto automáticamente por el Gate::before de spatie/laravel-permission). Ver constitution.md.
-            ->viteTheme('resources/css/filament/admin/theme.css');
+            // (Actualizado 2026-07-26, sesión de personalización de paneles: spatie/laravel-permission fue
+            // removido por completo del proyecto — ver constitution.md §1. No hay Gate::before ni Policies:
+            // cada Resource implementa canViewAny()/canCreate()/canEdit()/canDelete() estáticos que consultan
+            // directamente $user->tienePermiso('permiso.slug', $tallerId) o $user->esSuperAdmin().)
+            // `->viteTheme(...)` NO se implementó en esta sesión: AGENTS.md es explícito en que
+            // 016-ui-design-system (tokens Tailwind/CSS completos) se implementa junto con 005. Lo que sí se
+            // implementó ahora es solo el array `->colors([...])` de arriba (paleta Awesomic en hex, sin
+            // build de Tailwind). Descomentar y crear el archivo CSS cuando se implemente 016+005.
+            ;
     }
 }
 ```
@@ -212,22 +223,19 @@ class ErpPanelProvider extends PanelProvider
             ->middleware([
                 'auth:sistema',
                 'throttle:5,1',
-                SetTallerActivo::class,
             ])
             ->authMiddleware([
                 'auth:sistema',
+                SetTallerActivo::class,             // sí aplica en /erp, ver AdminPanelProvider arriba
+                ForzarCambioPasswordMiddleware::class,
             ])
             ->discoverResources(in: app_path('Filament/Erp/Resources'), for: 'App\\Filament\\Erp\\Resources')
             ->discoverWidgets(in: app_path('Filament/Erp/Widgets'), for: 'App\\Filament\\Erp\\Widgets')
-            // `->tenantOwnership(Ownership::new(...))` no existe en ninguna versión de Filament (API inventada
-            // en una versión anterior de este plan). La multi-tenancy nativa real de Filament es:
-            //   ->tenant(Taller::class, slugAttribute: 'slug')
-            // requiere que el modelo de usuario implemente `Filament\Models\Contracts\HasTenants`.
-            // Sin embargo este proyecto ya resuelve el tenant activo con BelongsToTaller + SetTallerActivo
-            // (sesión + global scope, ver §3), por lo que la tenancy nativa de Filament puede no ser
-            // necesaria — decidir al implementar este panel si conviene usarla en vez del middleware custom.
-            // No se usa `->spatiePermission()`: no es un método real, ver nota en AdminPanelProvider arriba.
-            ->viteTheme('resources/css/filament/erp/theme.css');
+            // (Decisión 2026-07-26, resuelta: NO se usa `->tenant()` nativo de Filament. Ya existe
+            // BelongsToTaller + SetTallerActivo (sesión + global scope, ver §3) funcionando y probado;
+            // usar también la tenancy nativa crearía dos fuentes de verdad del tenant activo.)
+            ;
+            // `->viteTheme(...)` diferido a 016+005, ver nota en AdminPanelProvider arriba.
     }
 }
 ```
@@ -240,17 +248,24 @@ El Tenant Switcher es un widget que aparece en el topbar del panel `/erp` si el 
 // App\Filament\Erp\Widgets\TenantSwitcher.php
 class TenantSwitcher extends Widget
 {
+    public static function canView(): bool
+    {
+        return static::talleresVigentes(auth()->user())->count() > 1;
+    }
+
+    protected static function talleresVigentes(UsuarioSistema $user): Collection
+    {
+        // Usa asignacionesVigentes() (no asignacionesRol()->where('activo', true) a secas): además de
+        // `activo` valida el rango vigente_desde/vigente_hasta, igual que tienePermiso()/canAccessPanel().
+        return $user->asignacionesVigentes()
+            ->filter(fn ($a) => $a->taller_id !== null)
+            ->pluck('taller');
+    }
+
     public function render()
     {
-        $talleres = auth()->user()
-            ->asignacionesRol()
-            ->with('taller')
-            ->where('activo', true)
-            ->get()
-            ->pluck('taller.nombre', 'taller.id');
-
         return view('filament.erp.widgets.tenant-switcher', [
-            'talleres' => $talleres,
+            'talleres' => static::talleresVigentes(auth()->user())->pluck('nombre', 'id'),
             'activo' => session('taller_activo_id'),
         ]);
     }
@@ -271,6 +286,12 @@ $panel->widgets([
 
 ```php
 // App\Http\Middleware\SetTallerActivo.php
+// (Corregido 2026-07-26: la versión original de este bloque llamaba a Spatie\Permission\PermissionRegistrar,
+// que no existe — el paquete fue removido, ver constitution.md §1 — y usaba asignacionesRol()->where('activo', true)
+// ignorando vigente_desde/vigente_hasta. Solo se registra en el panel /erp, no en /admin, ver AdminPanelProvider.
+// No maneja el caso de cero talleres: Filament\Http\Middleware\Authenticate, registrado antes en
+// authMiddleware(), ya exige vía canAccessPanel() al menos una asignación vigente con taller_id no
+// nulo para llegar hasta aquí — la misma condición de abajo, así que $tallerIds nunca está vacío.)
 class SetTallerActivo
 {
     public function handle(Request $request, Closure $next)
@@ -281,29 +302,19 @@ class SetTallerActivo
             return $next($request);
         }
 
-        // Obtener taller_ids activos del usuario
-        $tallerIds = $user->asignacionesRol()
-            ->where('activo', true)
+        $tallerIds = $user->asignacionesVigentes()
+            ->filter(fn ($a) => $a->taller_id !== null)
             ->pluck('taller_id')
             ->unique()
-            ->filter()
             ->values();
 
-        if ($tallerIds->isEmpty()) {
-            auth()->logout();
-            session()->invalidate();
-            return redirect('/erp/login')
-                ->with('error', 'No tienes acceso a ningún taller.');
-        }
+        $actual = session('taller_activo_id');
 
-        if ($tallerIds->count() === 1) {
-            session(['taller_activo_id' => $tallerIds[0]]);
+        if (! $tallerIds->contains($actual)) {
+            // Sin sesión previa válida: se usa el primero (orden por id). Si tiene más de uno,
+            // el widget TenantSwitcher permite cambiarlo después.
+            session(['taller_activo_id' => $tallerIds->first()]);
         }
-        // Si tiene varios, mantener el de la sesión o forzar selector
-
-        // Setear team_id para spatie/laravel-permission
-        app(\Spatie\Permission\PermissionRegistrar::class)
-            ->setPermissionsTeamId(session('taller_activo_id'));
 
         return $next($request);
     }
@@ -432,6 +443,8 @@ $codigo = SequentialCodeGenerator::generate(
 El `CHECK (codigo UNIQUE por taller)` en la base de datos es la última barrera: si por algún motivo el generador falla, PostgreSQL rechaza el duplicado y la transacción hace rollback.
 
 ## 5. Rutas API
+
+**Estado (2026-07-26):** siguen bloqueadas — los controladores referenciados (`TallerBusquedaApiController`, `ResenaApiController`, `FavoritoApiController`, `HomeController`, `TallerBusquedaController`, `TallerPerfilController`, `DashboardController`) pertenecen a `005-marketplace-busqueda-perfil`/`006-resenas-favoritos`, que no existen todavía. Crear estas rutas antes violaría el orden estricto de `AGENTS.md`. No se tocan hasta implementar esas features.
 
 ### `routes/api.php`
 

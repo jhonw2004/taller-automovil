@@ -29,27 +29,27 @@
 - [x] `php artisan filament:install --panels` + `php artisan make:filament-panel erp` — paneles `AdminPanelProvider` y `ErpPanelProvider` creados y registrados en `bootstrap/providers.php`
 - [x] Smoke test manual (`class_exists`) de las 9 clases críticas de los paquetes instalados: todas presentes
 
-## Configuración spatie/laravel-permission
-- [x] En `config/permission.php`: `'teams' => true` y `'team_foreign_key' => 'taller_id'`. Se seteó **antes** de correr la migración de las tablas de permisos (roles, model_has_roles, model_has_permissions ya nacieron con columna `taller_id`) — el propio paquete exige este orden o hay que rehacer la migración.
-- [ ] Publicar y personalizar migración si se requiere naming exacto en español — no se tocó, se dejó el naming default del paquete.
-- [ ] Listener que ejecuta `setPermissionsTeamId()` en cada request del guard `sistema` — depende del middleware `SetTallerActivo`, que a su vez depende de `$user->asignacionesRol()` de `002-roles-permisos` (modelo aún no existe). Pendiente hasta implementar `001`/`002`.
+## Configuración de roles/permisos
+- [x] ~~`config/permission.php`~~ **Obsoleto**: `spatie/laravel-permission` fue removido por completo en la sesión de `002-roles-permisos` (decisión 2026-07-26, ver `constitution.md` §1). Roles/permisos son modelos 100% custom (`Rol`/`Permiso`/`AsignacionRol`), sin `teams`/`team_foreign_key` de Spatie — el "team activo" es directamente `session('taller_activo_id')`.
+- [x] ~~Listener que ejecuta `setPermissionsTeamId()`~~ **Obsoleto**, no aplica (no hay `PermissionRegistrar`). Reemplazado por el middleware `SetTallerActivo` (ver abajo), que solo escribe `session('taller_activo_id')` — ningún listener adicional es necesario porque `tienePermiso()`/`BelongsToTallerScope` leen la sesión directamente.
 
 ## Paneles Filament
 - [x] `php artisan filament:install --panels` (crea el panel `admin` automáticamente, no hace falta `make:filament-panel admin` aparte)
 - [x] `php artisan make:filament-panel erp`
-- [ ] Configurar `AdminPanelProvider` con paleta Awesomic, middleware, auth guard `sistema` — quedaron con el scaffold default de Filament, falta personalizar (guard `sistema` no existe todavía, es de `001`)
-- [ ] Configurar `ErpPanelProvider` con paleta Awesomic, middleware, auth guard `sistema` — ídem
-- [ ] Crear recursos base para cada panel (dashboard, sidebar skeleton)
-- [ ] Widget `TenantSwitcher` en panel ERP
-- [ ] Middleware `SetTallerActivo` registrado en Kernel para guard `sistema` — depende de `001`/`002`
+- [x] `AdminPanelProvider` personalizado: paleta Awesomic (`->colors([...])`), `discoverResources`/`discoverPages`/`discoverWidgets` movidos a `Filament/Admin/...`, `ForzarCambioPasswordMiddleware` en `authMiddleware()`. `SetTallerActivo` deliberadamente NO se agregó aquí (ver plan.md §2, decisión: Super Admin no opera dentro de un taller).
+- [x] `ErpPanelProvider` personalizado: paleta Awesomic, `SetTallerActivo` + `ForzarCambioPasswordMiddleware` en `authMiddleware()`. Se decidió no usar `->tenant()` nativo de Filament (ver plan.md §2) para no duplicar la fuente de verdad del tenant activo (ya resuelta por `BelongsToTaller` + sesión).
+- [x] Widget `TenantSwitcher` en panel ERP (`canView()` solo si el usuario tiene >1 taller vigente).
+- [x] Middleware `SetTallerActivo` (`app/Http/Middleware/SetTallerActivo.php`), registrado solo en `ErpPanelProvider`.
+- [x] Middleware `ForzarCambioPasswordMiddleware` (nuevo, no estaba en el plan original) + páginas `CambiarPassword` en ambos paneles — resuelve el pendiente de `001-identidad-autenticacion` ("pantalla de cambio de contraseña obligatorio").
+- [ ] "Crear recursos base para cada panel (dashboard, sidebar skeleton)" — el dashboard default de Filament se deja tal cual; los Resources reales de cada feature (002/003 en esta sesión, 007+ después) son los que pueblan el sidebar.
 
 ## Multi-tenant: BelongsToTaller
 - [x] Trait `App\Traits\BelongsToTaller` con global scope + auto-fill `taller_id` en creating (`app/Traits/BelongsToTaller.php`)
 - [x] Scope `App\Models\Scopes\BelongsToTallerScope` (`app/Models/Scopes/BelongsToTallerScope.php`)
 - [x] Método `sinScope()` con auditoría de `withoutGlobalScope` (usa el helper `activity()` de spatie/laravel-activitylog)
-- [ ] Middleware `SetTallerActivo` que setea `taller_activo_id` en sesión y configura `setPermissionsTeamId()` — depende de `001`/`002` (relación `asignacionesRol()` no existe aún)
-- [ ] Redirección con mensaje si usuario no tiene acceso a ningún taller — depende de lo anterior
-- [ ] Tests Pest: usuario taller A no ve datos del taller B, creación auto-asigna `taller_id`, sinScope queda auditado — requieren un modelo real con el trait aplicado; se escribirán junto con la primera feature que lo use (`003-gestion-talleres` en adelante)
+- [x] Middleware `SetTallerActivo` que setea `taller_activo_id` en sesión (usa `asignacionesVigentes()`, no `setPermissionsTeamId()` — ver nota arriba)
+- [x] ~~Redirección con mensaje si usuario no tiene acceso a ningún taller~~ **No hizo falta código nuevo**: `Filament\Http\Middleware\Authenticate` (registrado antes en `authMiddleware()`) ya deniega con 403 vía `canAccessPanel()` antes de que `SetTallerActivo` se ejecute — ver comentario en el middleware.
+- [ ] Tests Pest: usuario taller A no ve datos del taller B, creación auto-asigna `taller_id`, sinScope queda auditado — requieren un modelo real con el trait aplicado; se escribirán junto con la primera feature que lo use (`007-clientes-vehiculos` en adelante, ningún modelo real lo usa todavía)
 
 ## Generación concurrente de códigos
 - [x] Action `App\Actions\SequentialCodeGenerator` con `FOR UPDATE` + reintentos (`app/Actions/SequentialCodeGenerator.php`). Se corrigió un bug del plan original: el parámetro `$retries` no se usaba (la llamada a `DB::transaction()` tenía `5` hardcodeado); ahora sí se respeta.

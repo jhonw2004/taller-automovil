@@ -1,6 +1,6 @@
 ---
 id: 003-gestion-talleres
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 002-roles-permisos]
 resumen: "Taller como tenant aislado: datos, estados, slug, geolocalización, categorías, horarios y calificación agregada."
 ---
