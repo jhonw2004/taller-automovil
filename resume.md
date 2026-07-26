@@ -191,7 +191,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **003-gestion-talleres (backend)**: migración de reemplazo de `talleres` (esquema completo: slug, estado, visible_en_mapa, calificación, soft delete) + `categorias`/`talleres_categorias`/`talleres_horarios`. Modelos `Taller` (con `HasGeolocation`+`HasSlug`+`SoftDeletes`), `Categoria`, `TallerHorario`. `CambiarVisibilidadTallerAction`/`CambiarPropietarioTallerAction`. `BelongsToTallerScope` ya excluye hijas de talleres soft-deleteados. **28/28 tests verdes**. UI (Filament Resources) y el listener de recálculo de calificación (depende de `Resena`, spec `006`) pendientes — ver sección de la cuarta sesión arriba para el detalle completo de qué falta y por qué.
 - **Total: 75/75 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) y la ruta prototipo `GET /api/talleres` (`TallerController@index`) se actualizaron para no romper con el esquema nuevo.
-- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` commiteado y pusheado (`08c2d90`). **Código de `003` (esta sesión) aún sin commitear.**
+- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` commiteado y pusheado (`08c2d90`). Código de `003` commiteado y pusheado (`dee42c2`). **Todo el código hasta `003` está en `origin/specs/planificacion`.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -233,7 +233,7 @@ El proyecto Laravel ya no es un esqueleto:
 
 1. ~~Commitear y pushear el código de implementación de `017` y `001`~~ **Hecho** (commit `eca323c` en `origin/specs/planificacion`).
 2. ~~Implementar `002-roles-permisos`~~ **Hecho** (commit `08c2d90` en `origin/specs/planificacion`).
-3. ~~Implementar `003-gestion-talleres`~~ **Hecho** (backend + 28 tests, esta sesión — **falta commitear y pushear**).
+3. ~~Implementar `003-gestion-talleres`~~ **Hecho** (commit `dee42c2` en `origin/specs/planificacion`).
 4. Retomar `017-infraestructura-sistema`: `SetTallerActivo` (setear `taller_id` activo en sesión tras login/selector), paneles Filament personalizados (paleta, tenancy real con `->tenant()`), rutas API/web. El seeding ya está resuelto.
 5. Implementar la UI (Filament Resources) de `001`, `002` y `003` en algún punto — quedaron con backend completo pero sin interfaz. No es bloqueante para seguir en orden si se prefiere UI-al-final, pero sí bloquea marcar esos specs como `implemented`.
 6. Seguir en orden de dependencia: `004-solicitud-alta-taller` → `005` + `016` → `006` → `007`…`015`. Al llegar a `006-resenas-favoritos`, recordar dos cosas pendientes de sesiones previas: (a) implementar el listener de recálculo de `calificacion_promedio`/`cantidad_resenas` de `Taller` sobre eventos de `Resena` (columnas y defaults ya listos desde `003`), y (b) decidir cómo asignar el rol `MARKETPLACE_USER` (recomendación ya documentada: chequear permisos `marketplace.*` sin pasar por `asignaciones_rol`, ver brecha estructural de la tercera sesión más abajo).
