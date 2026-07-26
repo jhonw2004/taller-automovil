@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Taller;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class TalleresSeeder extends Seeder
 {
@@ -60,17 +59,17 @@ class TalleresSeeder extends Seeder
                 ?? $props['contact:mobile']
                 ?? null;
 
-            $horario = $props['opening_hours'] ?? null;
-
+            // `opening_hours` (formato libre de OSM) ya no se guarda como texto suelto: el
+            // esquema nuevo usa la tabla estructurada `talleres_horarios` (003-gestion-talleres).
+            // Parsear ese formato queda fuera de alcance de este seeder de importación.
             Taller::create([
                 'nombre' => $nombre,
                 'direccion' => $direccion,
                 'telefono' => $telefono,
-                'horario' => $horario,
                 'lat' => (float) $lat,
                 'lon' => (float) $lon,
                 'osm_id' => $osmId,
-                'geom' => DB::raw("ST_SetSRID(ST_MakePoint($lon, $lat), 4326)"),
+                // `geom` se deriva automáticamente de lat/lon vía App\Traits\HasGeolocation.
             ]);
 
             $importados++;

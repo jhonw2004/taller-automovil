@@ -3,19 +3,21 @@
 namespace App\Traits;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 trait HasGeolocation
 {
+    /**
+     * Sincroniza `geom` desde `lat`/`lon` en cada save. Asigna un array (no un `DB::raw(...)`
+     * directo): el modelo debe castear `geom` con `App\Casts\GeometryCast`, cuyo `set()` es quien
+     * arma la expresión `ST_SetSRID(...)`. Asignar el `Expression` crudo aquí rompería el cast:
+     * Eloquent intercepta la asignación por `isClassCastable()` y llamaría a
+     * `GeometryCast::set()` con el `Expression` en vez del array `['lat'=>,'lon'=>]` que espera.
+     */
     public static function bootHasGeolocation(): void
     {
         static::saving(function ($model) {
             if ($model->lat !== null && $model->lon !== null) {
-                $model->geom = DB::raw(sprintf(
-                    'ST_SetSRID(ST_MakePoint(%F, %F), 4326)',
-                    (float) $model->lon,
-                    (float) $model->lat
-                ));
+                $model->geom = ['lat' => $model->lat, 'lon' => $model->lon];
             }
         });
     }
