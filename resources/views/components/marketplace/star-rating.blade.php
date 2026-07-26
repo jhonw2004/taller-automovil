@@ -27,7 +27,7 @@
         @for ($i = 1; $i <= $max; $i++)
             <button
                 type="button"
-                x-on:click="set({{ $i }})"
+                x-on:click="set({{ $i }}); $dispatch('star-rating-changed', {{ $i }})"
                 x-on:mouseenter="hover({{ $i }})"
                 x-on:mouseleave="hover(0)"
                 :aria-pressed="rating === {{ $i }}"

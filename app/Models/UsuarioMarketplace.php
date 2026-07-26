@@ -52,4 +52,14 @@ class UsuarioMarketplace extends Authenticatable
     {
         return $this->hasMany(IdentidadOauth::class);
     }
+
+    public function resenas(): HasMany
+    {
+        return $this->hasMany(Resena::class, 'usuario_marketplace_id');
+    }
+
+    public function favoritos(): HasMany
+    {
+        return $this->hasMany(Favorito::class, 'usuario_marketplace_id');
+    }
 }

@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'TallerAutomóviles') — Encuentra tu taller</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-paper font-cosmica text-graphite antialiased">
+    <x-marketplace.toast-container />
     <x-marketplace.nav />
 
     {{--
         Diferencia con `app.blade.php` (016-ui-design-system/plan.md): accesos directos del
-        usuario autenticado. "Mis favoritos"/"Mis reseñas" apuntan al dashboard de 006 —
-        no implementado todavía en esta sesión (005+016), las rutas se agregan junto con esa feature.
+        usuario autenticado. Primer consumidor real de este layout — hasta 006-resenas-favoritos
+        no existía ninguna ruta que lo usara.
     --}}
     @auth('web')
         <div class="border-b border-cloud bg-white">
             <div class="mx-auto flex max-w-[1200px] items-center gap-24 px-16 py-12 text-body text-fog sm:px-4">
                 <span class="text-graphite">Hola, {{ auth('web')->user()->nombre }}</span>
-                <span class="text-ash">Mis favoritos y reseñas — próximamente</span>
+                <a href="{{ route('dashboard') }}" class="text-obsidian hover:underline">Mis favoritos y reseñas</a>
             </div>
         </div>
     @endauth

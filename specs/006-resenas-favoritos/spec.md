@@ -1,6 +1,6 @@
 ---
 id: 006-resenas-favoritos
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 003-gestion-talleres]
 resumen: "Reseñas (1 por usuario-taller, moderables) y favoritos de talleres para usuarios marketplace autenticados."
 ---

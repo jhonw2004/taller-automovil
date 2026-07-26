@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SolicitudTallerController;
 use App\Http\Controllers\TallerBusquedaController;
@@ -46,3 +47,11 @@ Route::middleware('guest:web')->group(function () {
 Route::middleware('auth:web')->group(function () {
     Route::post('/auth/logout', [LogoutController::class, 'logout'])->name('auth.logout');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Marketplace — Dashboard del usuario (006, guard `web`, usuario autenticado)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:web')->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

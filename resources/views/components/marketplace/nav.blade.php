@@ -15,7 +15,9 @@
 
         <div class="flex items-center gap-12">
             @if ($usuario)
-                <span class="hidden text-body text-graphite sm:inline">{{ $usuario->nombre }}</span>
+                <a href="{{ route('dashboard') }}" class="hidden text-body text-graphite hover:text-obsidian sm:inline">
+                    {{ $usuario->nombre }}
+                </a>
                 <form method="POST" action="{{ route('auth.logout') }}">
                     @csrf
                     <x-button type="submit" variant="ghost">Cerrar sesión</x-button>

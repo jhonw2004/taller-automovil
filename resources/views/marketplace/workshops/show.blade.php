@@ -19,7 +19,7 @@
                         @endif
                     </div>
 
-                    <div>
+                    <div class="flex-1">
                         <h1 class="text-heading-sm font-semibold text-graphite">{{ $taller->nombre }}</h1>
                         @if ($taller->direccion)
                             <p class="text-body text-fog">{{ $taller->direccion }}</p>
@@ -31,6 +31,10 @@
                             </span>
                         </div>
                     </div>
+
+                    @auth('web')
+                        <x-marketplace.favorito-button :taller-id="$taller->id" :es-favorito="$esFavorito" />
+                    @endauth
                 </div>
 
                 @if ($taller->categorias->isNotEmpty())
@@ -77,13 +81,24 @@
 
                 <div class="mt-32">
                     <h2 class="text-subheading font-semibold text-graphite">Reseñas</h2>
-                    <div class="mt-12">
-                        {{-- 006-resenas-favoritos no está implementado todavía en esta sesión (005+016) —
-                             el listado real de reseñas se agrega ahí, reutilizando <x-marketplace.review-card>. --}}
-                        <x-empty-state
-                            title="Aún no hay reseñas"
-                            description="Sé el primero en compartir tu experiencia en este taller."
-                        />
+
+                    @auth('web')
+                        <div class="mt-12">
+                            <x-marketplace.resena-form :taller-id="$taller->id" :resena="$miResena" />
+                        </div>
+                    @endauth
+
+                    <div class="mt-16 flex flex-col gap-12">
+                        @forelse ($resenas as $resena)
+                            <x-marketplace.review-card :resena="$resena" />
+                        @empty
+                            @unless ($miResena)
+                                <x-empty-state
+                                    title="Aún no hay reseñas"
+                                    description="Sé el primero en compartir tu experiencia en este taller."
+                                />
+                            @endunless
+                        @endforelse
                     </div>
                 </div>
             </div>
