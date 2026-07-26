@@ -233,7 +233,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **003-gestion-talleres**: backend (migración de reemplazo de `talleres`, `categorias`/`talleres_categorias`/`talleres_horarios`, modelos `Taller`/`Categoria`/`TallerHorario`, `CambiarVisibilidadTallerAction`/`CambiarPropietarioTallerAction`) + **nueva Action `CambiarEstadoTallerAction` y UI (quinta sesión): `TallerResource` (erp+admin), `CategoriaResource`**. 28 tests de backend + 12 tests de `CambiarEstadoTallerAction`/autorización de Resources. Pendiente: listener de recálculo de calificación (depende de `Resena`, spec `006`), conteo real de hijas activas antes de soft-delete (depende de `007+`).
 - **Total: 107/107 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) y la ruta prototipo `GET /api/talleres` (`TallerController@index`) se actualizaron para no romper con el esquema nuevo.
-- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` commiteado y pusheado (`08c2d90`). Código de `003` commiteado y pusheado (`dee42c2`). **El código de la quinta sesión (UI de 017/001/002/003) todavía NO está commiteado** — pendiente de confirmar con el usuario antes de commitear/pushear.
+- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` (`08c2d90`), `003` (`dee42c2`), y UI de 017/001/002/003 (`96bce0d`) — **todo commiteado y pusheado en `origin/specs/planificacion`**.
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -277,9 +277,9 @@ El proyecto Laravel ya no es un esqueleto:
 2. ~~Implementar `002-roles-permisos`~~ **Hecho** (commit `08c2d90` en `origin/specs/planificacion`).
 3. ~~Implementar `003-gestion-talleres`~~ **Hecho** (commit `dee42c2` en `origin/specs/planificacion`).
 4. ~~Retomar `017-infraestructura-sistema`: `SetTallerActivo`, paneles Filament personalizados (paleta)~~ **Hecho** (quinta sesión). Rutas API/web siguen bloqueadas por `005`/`006` (no tocar antes).
-5. ~~Implementar la UI (Filament Resources) de `001`, `002` y `003`~~ **Hecho** (quinta sesión, 107/107 tests). **Código todavía sin commitear** — confirmar con el usuario antes de commitear/pushear.
+5. ~~Implementar la UI (Filament Resources) de `001`, `002` y `003`~~ **Hecho** (commit `96bce0d` en `origin/specs/planificacion`).
 6. Seguir en orden de dependencia: `004-solicitud-alta-taller` → `005` + `016` → `006` → `007`…`015`. Al llegar a `006-resenas-favoritos`, recordar dos cosas pendientes de sesiones previas: (a) implementar el listener de recálculo de `calificacion_promedio`/`cantidad_resenas` de `Taller` sobre eventos de `Resena` (columnas y defaults ya listos desde `003`), y (b) decidir cómo asignar el rol `MARKETPLACE_USER` (recomendación ya documentada: chequear permisos `marketplace.*` sin pasar por `asignaciones_rol`, ver brecha estructural de la tercera sesión más abajo).
-7. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002 y 003** (confirmado por el usuario tras la quinta sesión). El commit/push de todo el código de esta sesión queda a cargo del usuario, no se hizo desde el agente.
+7. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002 y 003** (confirmado por el usuario tras la quinta sesión, commit `96bce0d`).
 
 ## Cómo navegar si eres un agente retomando esto
 
