@@ -30,9 +30,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->authGuard('sistema')
-            // Paleta Awesomic (specs/016-ui-design-system/plan.md). El array `->colors([...])` es
-            // el único mapeo de color implementado en esta sesión — los tokens Tailwind/CSS
-            // completos (`->viteTheme()`) se implementan junto con 005, ver 017-plan.md §2.
+            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->font('DM Sans')
+            // Paleta Awesomic (specs/016-ui-design-system/plan.md). El mapeo semántico de
+            // `->colors()` complementa el theme.css (que trae la escala `gray`/`primary` completa
+            // vía @theme); se mantiene aquí para los colores planos que Filament usa fuera de CSS.
             ->colors([
                 'primary' => '#09090b',    // obsidian
                 'secondary' => '#18181b',  // graphite

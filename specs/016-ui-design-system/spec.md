@@ -1,6 +1,6 @@
 ---
 id: 016-ui-design-system
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 003-gestion-talleres, 005-marketplace-busqueda-perfil]
 resumen: "Design system único con dos caras: marketplace editorial (Awesomic zinc-gray + ember) y Filament thematic (mismos colores, componentes nativos). Componentes Blade compartidos, layouts, páginas del sistema y consistencia cross-guard."
 ---

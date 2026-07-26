@@ -1,18 +1,20 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
+            // Tipografía Cosmica/DM Sans (016-ui-design-system) servida vía @fontsource/dm-sans,
+            // importado directamente en resources/css/app.css — no vía bunny fonts (esa era la
+            // fuente Instrument Sans del skeleton de Laravel, ya reemplazada).
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.js',
+                'resources/css/filament/admin/theme.css',
+                'resources/css/filament/erp/theme.css',
             ],
+            refresh: true,
         }),
         tailwindcss(),
     ],

@@ -2,12 +2,22 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\SolicitudTallerController;
+use App\Http\Controllers\TallerBusquedaController;
+use App\Http\Controllers\TallerPerfilController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+/*
+|--------------------------------------------------------------------------
+| Marketplace — Búsqueda y perfil público de talleres (005, público, sin cuenta)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/talleres/buscar', [TallerBusquedaController::class, 'index'])->name('talleres.buscar');
+Route::get('/talleres/{slug}', [TallerPerfilController::class, 'show'])->name('talleres.show');
 
 /*
 |--------------------------------------------------------------------------

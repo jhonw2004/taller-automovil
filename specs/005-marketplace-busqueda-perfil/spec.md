@@ -1,6 +1,6 @@
 ---
 id: 005-marketplace-busqueda-perfil
-status: draft
+status: implemented
 depends_on: [003-gestion-talleres]
 resumen: "Búsqueda geográfica/por filtros de talleres y perfil público, sin requerir login."
 ---

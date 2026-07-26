@@ -22,21 +22,32 @@ trait HasGeolocation
         });
     }
 
+    /**
+     * `ST_DWithin` sobre `geometry` (no `geography`) mide en las unidades del SRID — en 4326 eso
+     * es **grados**, no metros. Sin el cast a `geography` este filtro no filtra nada realista
+     * (5000 "grados" cubre todo el planeta); verificado con dos puntos a 546km de distancia que
+     * pasaban un radio de 5km sin el cast. `geography(...)` fuerza el cálculo esférico en metros.
+     */
     public function scopeCercanoA(Builder $query, float $lat, float $lon, float $radioMetros): Builder
     {
         $table = $query->getModel()->getTable();
 
         return $query->whereRaw(
-            "ST_DWithin({$table}.geom, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?)",
+            "ST_DWithin(geography({$table}.geom), geography(ST_SetSRID(ST_MakePoint(?, ?), 4326)), ?)",
             [$lon, $lat, $radioMetros]
         );
     }
 
+    /**
+     * `selectRaw()` reemplaza el `SELECT *` implícito por la sola columna agregada si no hay
+     * ningún `select` previo en el query — hay que agregar `{tabla}.*` explícitamente o el
+     * modelo se hidrata solo con `distancia` y pierde el resto de sus columnas.
+     */
     public function scopeConDistanciaA(Builder $query, float $lat, float $lon): Builder
     {
         $table = $query->getModel()->getTable();
 
-        return $query->selectRaw(
+        return $query->addSelect("{$table}.*")->selectRaw(
             "ST_DistanceSphere({$table}.geom, ST_SetSRID(ST_MakePoint(?, ?), 4326)) as distancia",
             [$lon, $lat]
         );
