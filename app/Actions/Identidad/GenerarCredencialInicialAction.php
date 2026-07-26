@@ -14,9 +14,9 @@ use Illuminate\Support\Str;
  * directamente, spec 001). Devuelve el usuario y la contraseña temporal en texto plano para
  * mostrarla una sola vez — el llamador es responsable de no persistirla ni loguearla.
  *
- * NOTA: la asignación del rol OWNER para el taller (`$usuario->assignRole('owner')`) queda
- * pendiente de conectar aquí hasta que exista el catálogo de roles de sistema
- * (spec 002-roles-permisos + seeding de 017-infraestructura-sistema).
+ * No asigna el rol OWNER aquí a propósito: esta Action solo crea identidad+usuario+credencial
+ * (responsabilidad única). El llamador (p. ej. el flujo de aprobación de 004) compone con
+ * `App\Actions\Roles\AsignarRolAction` para asignar OWNER en el taller correspondiente.
  */
 class GenerarCredencialInicialAction
 {

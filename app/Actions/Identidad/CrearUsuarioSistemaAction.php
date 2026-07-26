@@ -8,8 +8,9 @@ namespace App\Actions\Identidad;
  * `GenerarCredencialInicialAction` (Super Admin → admin de taller); lo que cambia es
  * el actor y que el usuario queda ligado a un taller vía asignación de rol.
  *
- * NOTA: la asignación de rol + `taller_id` (`asignacion_rol`) queda pendiente de conectar
- * aquí hasta que exista el catálogo de roles de sistema (spec 002-roles-permisos).
+ * No asigna el rol aquí a propósito (mismo motivo que `GenerarCredencialInicialAction`):
+ * el llamador compone con `App\Actions\Roles\AsignarRolAction` pasando el rol operativo
+ * que corresponda (CAJERO, MECANICO, etc.) y `$tallerId`.
  */
 class CrearUsuarioSistemaAction
 {

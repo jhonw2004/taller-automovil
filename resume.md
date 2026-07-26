@@ -1,6 +1,34 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-26 (segunda sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (tercera sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-26 (tercera sesión): 002-roles-permisos (backend completo + 21 tests verdes)
+
+**Decisión de arquitectura confirmada con el usuario:** `002-roles-permisos/plan.md` dejaba abierto cómo mapear roles/permisos (usar Spatie nativo vs. tablas custom). Se eligió **implementación 100% custom, sin `spatie/laravel-permission`**: los criterios de aceptación exigen columnas de negocio en la asignación (`vigente_desde`/`vigente_hasta`, `asignado_por_usuario_sistema_id`, `activo` por asignación) que el pivot nativo de Spatie no soporta sin duplicar lógica en una tabla paralela.
+
+- **`spatie/laravel-permission` fue removido por completo**: rollback de sus migraciones (batch 3), `composer remove`, `config/permission.php` borrado. No queda ningún rastro del paquete en el proyecto — si en el futuro alguien ve referencias a él en un `plan.md` viejo, están obsoletas.
+- **4 migraciones nuevas** (`2026_07_26_050001` a `050004`): `roles` (taller_id NULL=global, unique parcial de slug para roles globales), `permisos` (catálogo global, sin taller_id), `roles_permisos` (pivote PK compuesta), `asignaciones_rol` (con `vigente_desde`/`vigente_hasta` + CHECK de que hasta >= desde, `activo`, `asignado_por_usuario_sistema_id`, unique parcial para asignaciones globales). Todas verificadas contra Postgres real (el CHECK de vigencia se probó con un insert que lo viola).
+- **Modelos nuevos**: `App\Models\Rol` (belongsToMany Permiso vía `roles_permisos`, belongsTo Taller nullable), `App\Models\Permiso`, `App\Models\AsignacionRol` (con `estaVigente()`).
+- **`UsuarioSistema` extendido**: `asignacionesRol()`, `asignacionesVigentes()` (filtra por `activo` + rango de fechas), `tienePermiso($slug, $tallerId=null)`, `esSuperAdmin()` (chequea rol slug `super-admin`). **`canAccessPanel()` ya no es un stub**: `/admin` exige `esSuperAdmin()`, `/erp` exige al menos una asignación vigente con `taller_id` no nulo.
+- **`App\Actions\Roles\AsignarRolAction`**: valida usuario/rol activos, `rol.taller_id === asignacion.taller_id` (cuando el rol no es global), solo super admin asigna `SUPER_ADMIN` o roles globales, un owner/admin de taller no puede asignar fuera de su propio taller, rechaza asignaciones duplicadas. `asignadoPor = null` está reservado para el bootstrap del seeder (no existe super admin todavía cuando se crea el primero).
+- **Seeders** (`PermisoSeeder`, `RolSistemaSeeder`, `SuperAdminSeeder`, cableados en `DatabaseSeeder`): 64 permisos del catálogo, 9 roles de sistema (`super-admin`, `owner`, `shop-admin`, `mecanico`, `cajero`, `recepcionista`, `supervisor`, `vendedor`, `marketplace-user`) con su mapping completo de permisos (`specs/017-infraestructura-sistema/plan.md` §8), y el primer usuario Super Admin (reutiliza `GenerarCredencialInicialAction` de 001 + `AsignarRolAction`). Corrido contra la BD real: 64 permisos, 9 roles, `esSuperAdmin()`/`tienePermiso()`/`canAccessPanel()` verificados con tinker.
+- **Factories nuevas**: `TallerFactory`, `RolFactory`, `PermisoFactory` (los tres modelos ahora usan `HasFactory`).
+- **21 tests Pest nuevos** en `tests/Feature/Roles/` cubriendo los 8 criterios de `002-roles-permisos/spec.md`: ámbito de taller (coincide/no coincide), duplicados, usuario/rol inactivo, solo super admin asigna SUPER_ADMIN, owner no asigna fuera de su taller ni roles globales, vigencia (CHECK de BD + `tienePermiso()` ignora asignaciones fuera de rango), acceso a paneles Filament, catálogo de permisos global (sin columna `taller_id`), slug de rol global único pero repetible entre talleres distintos. **47/47 tests verdes en total** (26 de 001 + 21 de 002), `laravel/pint` sin pendientes.
+- Se actualizaron los comentarios obsoletos en `GenerarCredencialInicialAction`/`CrearUsuarioSistemaAction` (de 001) que decían "pendiente hasta que exista 002" — ahora documentan que la asignación de rol se compone desde afuera con `AsignarRolAction`, a propósito (responsabilidad única).
+
+### Qué falta de `002` (por qué sigue en `status: draft`)
+
+Igual que `001`: backend completo y probado, **UI pendiente** — no se marca `implemented` hasta que exista también la interfaz.
+
+- Filament Resource para que el Super Admin administre el catálogo de permisos y los roles globales (`plan.md` mencionaba `filament/spatie-laravel-permission-plugin`, descartado junto con Spatie — hay que construir un Resource propio).
+- UI para que un owner/admin de taller cree roles personalizados de su taller y les asigne permisos.
+- Formulario de asignación de rol filtrado por taller activo (dependía del plugin de Spatie, ahora es un Resource/Action propio sobre `AsignarRolAction`).
+- No hay ninguna restricción de código que impida crear un `Permiso` fuera del seeder (el criterio "solo el super admin crea/edita el catálogo de permisos" no tiene ninguna superficie de escritura expuesta todavía, así que no aplica un enforcement real hasta que exista esa UI).
+
+### Dos brechas estructurales detectadas (documentadas, no bloquean 002 pero hay que resolverlas cuando toque)
+
+1. **`MARKETPLACE_USER` no se puede asignar realmente**: `asignaciones_rol.usuario_sistema_id` es FK a `usuarios_sistema`, no a `usuarios_marketplace`. El rol se seedea igual (queda en el catálogo, `spec.md` lo pide explícitamente como "rol de sistema recomendado"), pero no hay forma de asignarlo a un usuario marketplace con el esquema actual. Cuando se implemente `006-resenas-favoritos`, decidir: (a) los permisos `marketplace.*` se chequean directamente sin pasar por `asignaciones_rol` (más simple, probablemente lo correcto ya que el guard es distinto), o (b) se extiende el esquema. **Recomendación: opción (a)**, no forzar el sistema de roles del guard `sistema` sobre el guard `web`.
+2. **FK de `roles`/`asignaciones_rol` hacia `talleres.id`**: apunta al prototipo actual de `talleres` (`2026_07_19_174015_create_talleres_table.php`). Cuando `003-gestion-talleres` ejecute su migración de reemplazo (`DROP TABLE talleres` + recrear, ya documentada en `017-plan.md` §7), esa `DROP` va a fallar por las FK de `roles.taller_id` y `asignaciones_rol.taller_id` apuntando a la tabla vieja. Quien implemente `003` necesita o (a) dropear/recrear esas FK como parte de la misma migración de reemplazo, o (b) usar `Schema::table('talleres')->drop()` con las FKs dependientes contempladas explícitamente. **No se resolvió aquí** porque es trabajo de `003`, fuera de orden de implementación.
 
 ## Qué se hizo el 2026-07-26 (segunda sesión): commit, correcciones post-instalación y push
 
@@ -9,7 +37,7 @@
   - **017-plan.md**: `maatwebsite/laravel-excel:^3` → `maatwebsite/excel` (v4.x, compatible Laravel 11+; si falla, fallback `spatie/simple-excel`). Eliminado `@tailwindcss/forms` — **Tailwind v4 no lo necesita**, Preflight + utility classes manejan forms nativamente.
   - **017-tasks.md**: refleja los mismos cambios con nota de verificación.
 - Se creó la rama `specs/planificacion`, se agregaron todos los specs y documentación, y se subió a `origin/specs/planificacion` (commit `7e7f074`).
-- El código de `017` (infraestructura: paquetes, PostGIS, BelongsToTaller, GeometryCast, etc.) y `001` (backend + tests de identidad y autenticación) está **sin commitear aún** en `specs/planificacion` — está pendiente agregarlo y pushearlo.
+- Posteriormente se commiteó y pusheó el código de implementación de `017` (infraestructura: paquetes, PostGIS, BelongsToTaller, GeometryCast, etc.) y `001` (backend + tests de identidad y autenticación) en el commit `eca323c`. **Ya no está pendiente — no reintentar.**
 
 ## Qué se hizo el 2026-07-26 (primera sesión): instalación de paquetes (`017-infraestructura-sistema`, fase 0)
 
@@ -131,11 +159,13 @@ Las 17 features están numeradas por orden de dependencia (`depends_on` en el fr
 ## Estado real del código
 
 El proyecto Laravel ya no es un esqueleto:
-- **Stack instalado**: Filament v5.7.3, spatie/laravel-permission 7.4.2, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton.
-- **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Pendiente: seeding, `SetTallerActivo`, paneles Filament personalizados, rutas API/web (dependen de modelos 001/002).
-- **001-identidad-autenticacion (backend)**: 6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas. **26/26 tests verdes** en Pest.
-- **Prototipo Taller** existente pero incompatible con spec `003` — requiere migración de reemplazo (anotado en tasks).
-- Git: repositorio en rama `specs/planificacion`, specs/documentación commiteados y pusheados. Código de implementación pendiente de commit.
+- **Stack instalado**: Filament v5.7.3, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton. **`spatie/laravel-permission` fue instalado y luego removido** (ver sesión 2026-07-26 tercera) — roles/permisos son 100% custom, no depende de ese paquete.
+- **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Seeding de permisos/roles/Super Admin **ya hecho** (ver 002 abajo). Pendiente: `SetTallerActivo`, paneles Filament personalizados (paleta, tenancy), rutas API/web, migración de reemplazo de `talleres`.
+- **001-identidad-autenticacion (backend)**: 6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas. **26/26 tests verdes**.
+- **002-roles-permisos (backend)**: 4 migraciones + modelos (`Rol`, `Permiso`, `AsignacionRol`), `AsignarRolAction`, `UsuarioSistema::tienePermiso()`/`esSuperAdmin()`/`canAccessPanel()` ya resuelto. Catálogo de 64 permisos + 9 roles de sistema seedeados, primer Super Admin creado. **21/21 tests verdes**. UI (Filament Resources) pendiente — mismo patrón que 001.
+- **Total: 47/47 tests Pest verdes**, `laravel/pint` sin pendientes.
+- **Prototipo Taller** existente pero incompatible con spec `003` — requiere migración de reemplazo (anotado en tasks). Ahora tiene `HasFactory` + `TallerFactory` (agregado para poder testear 002).
+- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). **Código de `002` (esta sesión) aún sin commitear.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -175,11 +205,12 @@ El proyecto Laravel ya no es un esqueleto:
 
 ## Próximos pasos sugeridos
 
-1. **Commitear y pushear** el código de implementación de `017` y `001` (pendiente).
-2. Implementar `002-roles-permisos` — catálogo de permisos, roles de sistema, asignaciones. Esto desbloquea el seeding de `017`.
-3. Retomar `017-infraestructura-sistema` seeding + `SetTallerActivo` + paneles personalizados + rutas.
-4. Seguir en orden de dependencia: `003` → `004` → `005` + `016` → `006` → `007`…`015`.
-5. Al completar una feature con código + tests que cubran sus criterios de aceptación, actualizar `status: implemented` en el frontmatter de su `spec.md` (no antes).
+1. ~~Commitear y pushear el código de implementación de `017` y `001`~~ **Hecho** (commit `eca323c` en `origin/specs/planificacion`).
+2. ~~Implementar `002-roles-permisos`~~ **Backend hecho** (esta sesión, sin commitear todavía — preguntar al usuario antes de commitear/pushear).
+3. Retomar `017-infraestructura-sistema`: `SetTallerActivo` (setear `taller_id` activo en sesión tras login/selector), paneles Filament personalizados (paleta, tenancy real con `->tenant()`), rutas API/web. El seeding ya está resuelto.
+4. Implementar la UI (Filament Resources) de `001` y `002` en algún punto — quedaron con backend completo pero sin interfaz, igual que estaba `001`. No es bloqueante para seguir con `003` si se prefiere UI-al-final, pero sí bloquea marcar esos specs como `implemented`.
+5. Seguir en orden de dependencia: `003` → `004` → `005` + `016` → `006` → `007`…`015`. Al llegar a `003`, recordar las dos brechas estructurales documentadas arriba (FK de `roles`/`asignaciones_rol` hacia el prototipo de `talleres`, y la decisión pendiente sobre `MARKETPLACE_USER`).
+6. Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented` en el frontmatter de su `spec.md` (no antes) — ver por qué 001 y 002 siguen en `draft` pese a tener backend probado.
 
 ## Cómo navegar si eres un agente retomando esto
 
