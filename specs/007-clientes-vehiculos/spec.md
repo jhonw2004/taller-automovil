@@ -1,6 +1,6 @@
 ---
 id: 007-clientes-vehiculos
-status: draft
+status: implemented
 depends_on: [002-roles-permisos, 003-gestion-talleres]
 resumen: "Registro administrativo de clientes y sus vehículos dentro de un taller, sin relación con usuarios marketplace/sistema."
 ---
