@@ -261,7 +261,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **004-solicitud-alta-taller** (sexta sesión): completo — backend (`solicitudes_taller`/`solicitudes_taller_historial`, modelos, 6 Actions de máquina de estados con `lockForUpdate`), UI pública (`/solicitudes-taller/nueva`, formulario multi-paso; `/solicitudes-taller/{token}`, seguimiento) y Filament (`SolicitudTallerResource` en `/admin`). 44 tests. Pendiente a propósito: detección de duplicados (criterio opcional del spec, no activado).
 - **Total: 151/151 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) y la ruta prototipo `GET /api/talleres` (`TallerController@index`) se actualizaron para no romper con el esquema nuevo.
-- Git: repositorio en rama `specs/planificacion`. Código de `017`+`001` commiteado y pusheado (`eca323c`). Código de `002` (`08c2d90`), `003` (`dee42c2`), UI de 017/001/002/003 (`96bce0d`) — todo pusheado en `origin/specs/planificacion`. **Código de `004` (sexta sesión): sin commitear todavía.**
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `004-solicitud-alta-taller` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e`). **No hay código pendiente de commit.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -306,7 +306,7 @@ El proyecto Laravel ya no es un esqueleto:
 3. ~~Implementar `003-gestion-talleres`~~ **Hecho** (commit `dee42c2` en `origin/specs/planificacion`).
 4. ~~Retomar `017-infraestructura-sistema`: `SetTallerActivo`, paneles Filament personalizados (paleta)~~ **Hecho** (quinta sesión). Rutas API/web siguen bloqueadas por `005`/`006` (no tocar antes).
 5. ~~Implementar la UI (Filament Resources) de `001`, `002` y `003`~~ **Hecho** (commit `96bce0d` en `origin/specs/planificacion`).
-6. ~~Implementar `004-solicitud-alta-taller`~~ **Hecho** (sexta sesión, backend+UI pública+Filament completos). **Pendiente: commitear y pushear** (sin commitear a la fecha de este resume).
+6. ~~Implementar `004-solicitud-alta-taller`~~ **Hecho** (commit `c42d59e` en `origin/specs/planificacion`).
 7. Seguir en orden de dependencia: `005-marketplace-busqueda-perfil` + `016-ui-design-system` (en paralelo, ver `AGENTS.md`) → `006` → `007`…`015`. Al llegar a `006-resenas-favoritos`, recordar dos cosas pendientes de sesiones previas: (a) implementar el listener de recálculo de `calificacion_promedio`/`cantidad_resenas` de `Taller` sobre eventos de `Resena` (columnas y defaults ya listos desde `003`), y (b) decidir cómo asignar el rol `MARKETPLACE_USER` (recomendación ya documentada: chequear permisos `marketplace.*` sin pasar por `asignaciones_rol`, ver brecha estructural de la tercera sesión más abajo).
 8. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003 y 004** (004 marcado en la sexta sesión).
 
