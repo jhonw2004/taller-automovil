@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Auth\UsuarioSistemaProvider;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Auth::provider('usuarios_sistema_eloquent', function ($app, array $config) {
+            return new UsuarioSistemaProvider($app['hash'], $config['model']);
+        });
     }
 }

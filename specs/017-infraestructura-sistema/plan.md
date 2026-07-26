@@ -55,30 +55,40 @@ La tabla `jobs` existe. No se necesita worker corriendo en el MVP (el recálculo
 
 ## 1. Paquetes — lista completa de instalación
 
+**Actualizado 2026-07-26 con versiones reales instaladas** (verificado con Context7 + Packagist contra Laravel 13.8 / PHP 8.5.4, que ya estaban instalados al ejecutar esta fase). El bloque original de este plan asumía versiones que quedaron desactualizadas o resultaron incompatibles; se documentan aquí los cambios y el porqué.
+
 ### Composer (PHP)
 
 ```
-composer require filament/filament:^3.2
-composer require spatie/laravel-permission:^6
+composer require filament/filament:^5.0
+composer require spatie/laravel-permission:^7.0
 composer require laravel/socialite:^5
-composer require laravel/breeze:^2 --dev
+composer require laravel/breeze:^2.4 --dev
 composer require spatie/laravel-sluggable:^4
-composer require spatie/laravel-activitylog:^4
-composer require maatwebsite/excel  # v4.x compatible Laravel 11+; si falla composer, usar spatie/simple-excel como fallback
-composer require pxlrbt/filament-excel:^2  # requiere maatwebsite/excel instalado antes
-composer require pestphp/pest:^3 --dev
-composer require pestphp/pest-plugin-laravel:^3 --dev
-composer require barryvdh/laravel-debugbar:^3 --dev
+composer require spatie/laravel-activitylog:^5.0
+composer require spatie/simple-excel:^3.10
+composer require barryvdh/laravel-debugbar:^4.4 --dev
 
 # guzzle ya viene con laravel/socialite como dependencia, pero se explicita:
 composer require guzzlehttp/guzzle:^7
-
-# Reemplazar phpunit por pest:
-composer remove phpunit/phpunit --dev
-composer require pestphp/pest:^3 --dev
-composer require pestphp/pest-plugin-laravel:^3 --dev
-php artisan pest:install --no-interaction
 ```
+
+**Cambios respecto a la versión original de este plan:**
+
+- **`filament/filament:^5.0`, no `^3.2`.** v3 no tiene compatibilidad garantizada con Laravel 13/PHP 8.5, y plugins clave del ecosistema (`pxlrbt/filament-excel`) ya no la soportan. Implicación para specs 007-015: la sintaxis de multi-tenancy es `->tenant(Taller::class, slugAttribute: 'slug')`, **no** `->tenantOwnership(Ownership::new(...))` como aparecía en una versión anterior de este documento (esa API no existe en ninguna versión de Filament). Revisar la sintaxis exacta de Resources/Schemas contra la documentación de Filament v5 al implementar cada spec del ERP, no asumir sintaxis v3.
+- **`spatie/laravel-permission:^7.0`, no `^6`.** Para Laravel 12/13 la línea soportada activamente es v7 (requiere PHP 8.3+, cumplido con PHP 8.5.4). v6 sigue funcionando en teoría pero está pensada para Laravel 8-12.
+- **`spatie/laravel-activitylog:^5.0`, no `^4`.** Requiere PHP 8.4+ (cumplido).
+- **`maatwebsite/excel` + `pxlrbt/filament-excel` reemplazados por `spatie/simple-excel:^3.10`.** `maatwebsite/excel` no es instalable: su dependencia `phpoffice/phpspreadsheet` exige `php <8.5.0` y el proyecto corre PHP 8.5.4. Este era el fallback explícito que ya prevé este documento. **Implicación:** los exports en las Resources de Filament (specs 007-015) deben implementarse con `Filament\Actions` custom sobre `Spatie\SimpleExcel\SimpleExcelWriter`, no con `pxlrbt/filament-excel`'s `ExportBulkAction` (ese paquete exige `maatwebsite/excel` como dependencia dura).
+- **`barryvdh/laravel-debugbar:^4.4`, no `^3`.** v3 no soporta Laravel 13. El facade correcto es `Fruitcake\LaravelDebugbar\Facades\Debugbar` (namespace heredado del fork Fruitcake, no `Barryvdh\Debugbar`).
+- **Pest ya estaba instalado** (`pestphp/pest:^4.7`, `pestphp/pest-plugin-laravel:^4.1`) en el skeleton de Laravel 13 — no hay `phpunit/phpunit` que remover ni que reinstalar Pest en `^3`. Los pasos de swap de este plan no aplicaron.
+- **Prerrequisito de sistema:** Filament v5 requiere la extensión PHP `intl` (`ext-intl`). Si `php -m` no la lista, habilitar `extension=intl` en `php.ini` antes de instalar.
+- **Tags de `vendor:publish` en v7/v5:** ambos paquetes de Spatie migraron a `spatie/laravel-package-tools`, que registra los assets bajo `{shortName}-config` / `{shortName}-migrations` (con el prefijo `laravel-` recortado del nombre del paquete), no bajo el nombre del `--provider`. Usar:
+  ```
+  php artisan vendor:publish --tag=permission-config --force
+  php artisan vendor:publish --tag=permission-migrations --force
+  php artisan vendor:publish --tag=activitylog-config --force
+  php artisan vendor:publish --tag=activitylog-migrations --force
+  ```
 
 ### NPM
 
@@ -91,10 +101,11 @@ npm install @fontsource/dm-sans
 ### Post-instalación
 
 ```bash
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider"
-php artisan filament:install --panels
-php artisan make:filament-panel admin
+php artisan vendor:publish --tag=permission-config --force
+php artisan vendor:publish --tag=permission-migrations --force
+php artisan vendor:publish --tag=activitylog-config --force
+php artisan vendor:publish --tag=activitylog-migrations --force
+php artisan filament:install --panels   # crea el panel "admin" automáticamente
 php artisan make:filament-panel erp
 ```
 
@@ -177,7 +188,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
-            ->spatiePermission()  // filament/spatie-laravel-permission-plugin
+            // Filament no tiene un método `->spatiePermission()` — no existe en ninguna versión.
+            // La autorización se integra vía Policies de Laravel (que consultan $user->can('permiso.slug'),
+            // resuelto automáticamente por el Gate::before de spatie/laravel-permission). Ver constitution.md.
             ->viteTheme('resources/css/filament/admin/theme.css');
     }
 }
@@ -206,11 +219,14 @@ class ErpPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Erp/Resources'), for: 'App\\Filament\\Erp\\Resources')
             ->discoverWidgets(in: app_path('Filament/Erp/Widgets'), for: 'App\\Filament\\Erp\\Widgets')
-            ->tenantOwnership(Ownership::new(
-                ownerColumn: 'taller_id',
-                ownerRelationship: 'taller',
-            ))
-            ->spatiePermission()
+            // `->tenantOwnership(Ownership::new(...))` no existe en ninguna versión de Filament (API inventada
+            // en una versión anterior de este plan). La multi-tenancy nativa real de Filament es:
+            //   ->tenant(Taller::class, slugAttribute: 'slug')
+            // requiere que el modelo de usuario implemente `Filament\Models\Contracts\HasTenants`.
+            // Sin embargo este proyecto ya resuelve el tenant activo con BelongsToTaller + SetTallerActivo
+            // (sesión + global scope, ver §3), por lo que la tenancy nativa de Filament puede no ser
+            // necesaria — decidir al implementar este panel si conviene usarla en vez del middleware custom.
+            // No se usa `->spatiePermission()`: no es un método real, ver nota en AdminPanelProvider arriba.
             ->viteTheme('resources/css/filament/erp/theme.css');
     }
 }

@@ -1,6 +1,85 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-20. Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (segunda sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-26 (segunda sesión): commit, correcciones post-instalación y push
+
+- Se corrigieron `AGENTS.md`, `017-plan.md` y `017-tasks.md`:
+  - **AGENTS.md**: reescrito con tabla de orden de implementación obligatorio (paso 0→7) + notas sobre specs transversales.
+  - **017-plan.md**: `maatwebsite/laravel-excel:^3` → `maatwebsite/excel` (v4.x, compatible Laravel 11+; si falla, fallback `spatie/simple-excel`). Eliminado `@tailwindcss/forms` — **Tailwind v4 no lo necesita**, Preflight + utility classes manejan forms nativamente.
+  - **017-tasks.md**: refleja los mismos cambios con nota de verificación.
+- Se creó la rama `specs/planificacion`, se agregaron todos los specs y documentación, y se subió a `origin/specs/planificacion` (commit `7e7f074`).
+- El código de `017` (infraestructura: paquetes, PostGIS, BelongsToTaller, GeometryCast, etc.) y `001` (backend + tests de identidad y autenticación) está **sin commitear aún** en `specs/planificacion` — está pendiente agregarlo y pushearlo.
+
+## Qué se hizo el 2026-07-26 (primera sesión): instalación de paquetes (`017-infraestructura-sistema`, fase 0)
+
+Se instalaron los paquetes Composer/NPM de `017-infraestructura-sistema`. El proyecto Laravel ya no es un esqueleto vacío: corre Laravel 13.8 / PHP 8.5.4, y sobre eso se instalaron Filament v5.7.3, spatie/laravel-permission 7.4.2, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, y (dev) laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4. Pest v4 ya venía instalado con el skeleton.
+
+**Todo esto se verificó con Context7 + Packagist contra el estado real de PHP 8.5.4/Laravel 13.8 antes de instalar**, porque `017-plan.md` había quedado desactualizado en varios puntos. El detalle completo (qué cambió y por qué) está documentado en `specs/017-infraestructura-sistema/plan.md` §1 y `tasks.md` — léelos antes de asumir que el plan original es fiel a lo instalado. Resumen de las decisiones que importan para retomar:
+
+1. **Filament v5, no v3.2** (decisión confirmada con el usuario). v3 no tiene compatibilidad garantizada con Laravel 13/PHP 8.5 y plugins clave ya no la soportan.
+2. **`maatwebsite/excel` no se pudo instalar** (conflicto de versión de PHP con `phpoffice/phpspreadsheet`). Se sustituyó por `spatie/simple-excel` + `pxlrbt/filament-excel` fue removido del plan. **Los exports en Resources de Filament (specs 007-015) se implementan con acciones custom sobre `SimpleExcelWriter`, no con `ExportBulkAction`.**
+3. **Se detectaron y corrigieron dos APIs de Filament inventadas** en el plan original (`->tenantOwnership(Ownership::new(...))` y `->spatiePermission()` — ninguna existe en ninguna versión real de Filament). La autorización real se integra vía Laravel Model Policies; la tenancy nativa real es `->tenant(Model::class, slugAttribute: ...)`. **Al implementar los PanelProviders y cualquier Resource de Filament, no confiar en la sintaxis literal de versiones previas de `017-plan.md` — verificar contra la documentación real de Filament v5 (Context7) primero.**
+4. Se habilitó la extensión PHP `intl` en `php.ini` (requerida por Filament v5, estaba deshabilitada en el sistema).
+5. `php artisan filament:install --panels` + `make:filament-panel erp` ejecutados: `AdminPanelProvider` y `ErpPanelProvider` creados y registrados en `bootstrap/providers.php`. **Aún no tienen la configuración de colores/middleware/tenancy del plan** — son el scaffold default de Filament, falta personalizarlos.
+ 6. Config y migraciones de `spatie/laravel-permission` y `spatie/laravel-activitylog` publicadas (tablas aún no migradas — falta correr `php artisan migrate` una vez esté lista la migración de PostGIS que debe ir primero).
+
+### Qué más se hizo el 2026-07-26: resto de infra autocontenida de `017`
+
+Después de la instalación de paquetes se completó todo lo de `017-infraestructura-sistema` que **no depende de modelos de otras specs**:
+- Migración PostGIS (`0000_00_00_000001_create_extension_postgis.php`), migrada. PostgreSQL 18.3 + PostGIS 3.6.2 ya estaban en el servidor.
+- `config/app.php` timezone `America/La_Paz`.
+- Queue: `QUEUE_CONNECTION=database` ya estaba en `.env`, y la tabla `jobs` ya viene por defecto en el skeleton de Laravel 13 — no hizo falta nada.
+- `config/permission.php`: `teams=true` + `team_foreign_key=taller_id`, seteado **antes** de migrar las tablas de permisos (importante: si se migra con `teams=false` y se cambia después, hay que dropear y re-migrar esas tablas — spatie/laravel-permission no las actualiza retroactivamente).
+- `app/Traits/BelongsToTaller.php` + `app/Models/Scopes/BelongsToTallerScope.php` + `sinScope()`.
+- `app/Actions/SequentialCodeGenerator.php` (con un bug del plan corregido: el parámetro `$retries` no se usaba).
+- `app/Traits/HasGeolocation.php` + `app/Casts/GeometryCast.php` — **verificados contra PostGIS real** (round-trip `get()`/`set()` con `ST_AsHexEWKB` da el resultado exacto, no solo revisado a ojo). El plan original no traía código para `GeometryCast`, se implementó desde cero decodificando EWKB hexadecimal a mano.
+
+### Por qué se pausó `017` ahí y se sigue con `001`
+
+Lo que queda de `017-infraestructura-sistema` (seeding de permisos/roles/super admin/catálogos, personalización real de los PanelProviders, middleware `SetTallerActivo`, rutas API/web, migración de reemplazo de `talleres`) **depende de modelos que no existen hasta `001`/`002`**: `usuarios_sistema`, `Identidad`, `Rol`/`Permiso` con su relación `asignacionesRol()`, controladores de `005`/`006` para las rutas. Esto es una inconsistencia estructural del plan original de `017` (fue escrito asumiendo que esos modelos ya existirían), documentada en detalle en `specs/017-infraestructura-sistema/tasks.md`.
+
+**Decisión (2026-07-26, confirmada con el usuario):** en vez de forzar un workaround (ej. crear la migración de reemplazo de `talleres` sin la FK a `usuarios_sistema`, o inventar el shape de `asignacionesRol()`), se pausa `017` en su punto autocontenido y se pasa a implementar `001-identidad-autenticacion`. Cuando existan esos modelos, retomar `017-infraestructura-sistema/tasks.md` para terminar: seeding, `SetTallerActivo`, paneles Filament personalizados (paleta, middleware, guard `sistema`), rutas, y la migración de reemplazo de `talleres` (con la FK correcta esta vez).
+
+## Qué se hizo después: 001-identidad-autenticacion (backend completo, sin UI)
+
+Implementado y **verificado funcionalmente contra la BD real** (transacciones con rollback en cada prueba, no solo `class_exists`):
+
+- 6 migraciones (`identidades`, `usuarios_marketplace`, `identidades_oauth`, `usuarios_sistema`, `credenciales_sistema`, `historial_passwords`) + 6 modelos Eloquent con relaciones probadas de punta a punta.
+- Se eliminó la tabla/modelo `users` default de Laravel (no es parte de esta arquitectura) — `DatabaseSeeder` limpiado.
+- Guards `web`/`sistema` en `config/auth.php`. `UsuarioMarketplace`/`UsuarioSistema` extienden `Illuminate\Foundation\Auth\User`, sin remember-me (`$rememberTokenName = ''`).
+- OAuth Google: `GoogleAuthController`, `LoginOrRegisterMarketplaceUserAction` (idempotencia por `provider_subject` verificada: 2 logins seguidos no duplican nada).
+- `App\Auth\UsuarioSistemaProvider` (provider custom): rechaza login si `activo=false` o `bloqueado_hasta` en el futuro — un provider `eloquent` estándar no puede validarlo porque esos datos viven en `CredencialSistema`, no en `UsuarioSistema`. Probado: cuenta bloqueada con password correcta → rechazada; desbloqueada → aceptada.
+- Listeners `RegistrarIntentoFallidoListener`/`ReiniciarIntentosFallidosListener` (auto-descubiertos, sin registro manual): 5 fallos → bloqueo 15 min; login exitoso resetea el contador. Probado end-to-end con `Auth::attempt()` real.
+- `CambiarPasswordAction`: rechaza reutilizar la actual o cualquiera de las últimas 5, recorta el historial a 5. Probado con 7 cambios sucesivos.
+- `GenerarCredencialInicialAction` / `CrearUsuarioSistemaAction`: generan password temporal de 16 caracteres que cumple la política (`Password::min(12)->mixedCase()->numbers()->symbols()`), verificado contra el validador real.
+- `App\Exceptions\BusinessException` (transversal, constitution.md §4) creada porque hacía falta para `CambiarPasswordAction`.
+- `CheckSessionExpiration` (30 min de inactividad, guard `sistema`) registrado en ambos PanelProviders de Filament.
+- Hallazgo importante: Filament v5 **ya trae rate limiting nativo** en su página de Login (`WithRateLimiting`, 5 intentos/60s por IP) — cubre el `throttle:5,1` del spec sin código adicional.
+- Decisión: **no se corrió `laravel/breeze:install`** — genera scaffolding de login/registro con contraseña atado a una tabla `users` que ya no existe en esta arquitectura. Se implementó el flujo OAuth a mano en su lugar. El paquete queda instalado por si sirve de referencia.
+
+### Qué falta de `001`
+
+- **UI**: pantalla/Livewire component de cambio de contraseña obligatorio (primer login + expirada) — el backend (`CambiarPasswordAction`) ya está listo para que la consuma.
+- OWASP: `APP_DEBUG=false`/`composer audit` en CI (no hay pipeline de CI configurado todavía en este repo), signed routes para desbloqueo de usuario (no hay pantalla que las emita aún, es de `002`/`008`).
+- La asignación de rol `OWNER`/rol de empleado al crear un usuario sistema queda con una nota explícita en el código (`GenerarCredencialInicialAction`, `CrearUsuarioSistemaAction`) — depende del catálogo de roles de `002-roles-permisos`, que no existe todavía.
+
+## Qué se hizo después: suite de tests Pest de 001 (26/26 verdes)
+
+Se provisionó infraestructura de test real (no se podía usar antes de ahora):
+- BD dedicada `taller_test` en el PostgreSQL local, `.env.testing`, `RefreshDatabase` habilitado en `tests/Pest.php`.
+- **`phpunit.xml` forzaba SQLite en memoria** (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`), lo que tiene prioridad sobre `.env.testing` y violaba `constitution.md` §6 explícitamente. Se quitaron esas líneas.
+- Factories nuevas: `IdentidadFactory`, `UsuarioSistemaFactory`, `CredencialSistemaFactory`, `UsuarioMarketplaceFactory`.
+- 9 archivos de test en `tests/Feature/Identidad/` cubriendo los 9 criterios de `001-identidad-autenticacion/tasks.md` (idempotencia OAuth, separación de guards, bloqueo por intentos, rate limiting nativo de Filament vía `Livewire::test()`, política de password incluyendo `uncompromised()` con `Http::fake()`, expiración de password, reutilización de historial, expiración de sesión, password nunca expuesto en serialización).
+- **26/26 tests pasan**, 55 assertions. `laravel/pint` sin pendientes.
+
+### Tres bugs reales que la suite encontró (no solo bugs de los tests) — habrían llegado a producción
+
+1. **`UsuarioSistema` no implementaba `Filament\Models\Contracts\FilamentUser`** → Filament v5 deniega el acceso a **todos** los paneles (403) por defecto sin ese contrato. Ningún usuario sistema habría podido entrar a `/admin` ni `/erp`. Corregido con `canAccessPanel()` (por ahora solo exige `activo`; restricción real por rol pendiente de `002`).
+2. **Tampoco implementaba `Filament\Models\Contracts\HasName`** → Filament intenta leer un atributo `name` inexistente (el modelo usa `nombre`/`apellido`) y explota con `TypeError` al renderizar cualquier página. Corregido con `getFilamentName()`.
+3. **Bug real en `CheckSessionExpiration`**: `now()->diffInMinutes($ultimaActividad) > 30` — en la versión de Carbon de este proyecto `diffInMinutes()` devuelve un valor **con signo** (negativo para fechas pasadas), no absoluto. La sesión nunca habría expirado por inactividad pese a que el código "se veía" correcto. Corregido comparando fechas directamente (`->lt(now()->subMinutes(30))`).
+
+Estos tres son la razón de peso para no saltarse la suite de tests aunque el backend ya estuviera "funcionalmente verificado a mano" — las pruebas manuales por tinker no pasan por la pila real de Filament (paneles, Livewire) ni ejercitan el paso del tiempo, así que no los habrían atrapado.
 
 ## Qué es este proyecto
 
@@ -49,14 +128,14 @@ Cada carpeta de feature tiene:
 
 Las 17 features están numeradas por orden de dependencia (`depends_on` en el frontmatter). **Todas están en `status: draft`** — nada de esto está implementado todavía en código (ver más abajo).
 
-## Estado real del código (verificado, no asumido)
+## Estado real del código
 
-El proyecto Laravel es prácticamente un esqueleto recién iniciado:
-- `composer.json` es el default de Laravel; **ninguno** de los paquetes de la arquitectura objetivo (Filament, spatie/laravel-permission, socialite, activitylog, etc.) está instalado todavía.
-- Solo existe un prototipo mínimo: modelo/migración/controlador de `Taller` (`app/Models/Taller.php`, `database/migrations/2026_07_19_174015_create_talleres_table.php`, `app/Http/Controllers/TallerController.php`).
-- **Ese prototipo no coincide con el spec de `003-gestion-talleres`**: le faltan `slug`, `estado`, `visible_en_mapa`, `calificacion_promedio`, `cantidad_resenas`; tiene una columna `horario` string en vez de la tabla `talleres_horarios`. Cuando se implemente `003-gestion-talleres`, la tarea ya está anotada en su `tasks.md`: requiere una migración de **reemplazo**, no incremental.
-- No hay tests reales (solo los `ExampleTest.php` default de Laravel).
-- Es un repo git local (`taller-automoviles/.git`), rama `main`, un solo commit ("Commit inicial del proyecto"). Nada de lo hecho en esta sesión está commiteado todavía.
+El proyecto Laravel ya no es un esqueleto:
+- **Stack instalado**: Filament v5.7.3, spatie/laravel-permission 7.4.2, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton.
+- **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Pendiente: seeding, `SetTallerActivo`, paneles Filament personalizados, rutas API/web (dependen de modelos 001/002).
+- **001-identidad-autenticacion (backend)**: 6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas. **26/26 tests verdes** en Pest.
+- **Prototipo Taller** existente pero incompatible con spec `003` — requiere migración de reemplazo (anotado en tasks).
+- Git: repositorio en rama `specs/planificacion`, specs/documentación commiteados y pusheados. Código de implementación pendiente de commit.
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -96,11 +175,11 @@ El proyecto Laravel es prácticamente un esqueleto recién iniciado:
 
 ## Próximos pasos sugeridos
 
-1. Implementar `017-infraestructura-sistema` primero (paquetes, PostGIS, timezone, queue, paneles, BelongsToTaller, seeds, rutas, helpers).
-2. Luego implementar en orden de dependencia: `001` → `002` → `003` → `004` → `005` + `016` → resto.
-2. Empezar implementación en orden de dependencia: `001-identidad-autenticacion` → `002-roles-permisos` → `003-gestion-talleres` (con la migración de reemplazo del prototipo) → resto según `depends_on`.
-3. Instalar el stack base descrito en `memory/constitution.md` §1 antes de escribir código de cualquier feature (Filament, spatie/laravel-permission con `teams=true`, laravel/socialite, laravel/breeze).
-4. Al completar una feature con código + tests que cubran sus criterios de aceptación, actualizar `status: implemented` en el frontmatter de su `spec.md` (no antes).
+1. **Commitear y pushear** el código de implementación de `017` y `001` (pendiente).
+2. Implementar `002-roles-permisos` — catálogo de permisos, roles de sistema, asignaciones. Esto desbloquea el seeding de `017`.
+3. Retomar `017-infraestructura-sistema` seeding + `SetTallerActivo` + paneles personalizados + rutas.
+4. Seguir en orden de dependencia: `003` → `004` → `005` + `016` → `006` → `007`…`015`.
+5. Al completar una feature con código + tests que cubran sus criterios de aceptación, actualizar `status: implemented` en el frontmatter de su `spec.md` (no antes).
 
 ## Cómo navegar si eres un agente retomando esto
 

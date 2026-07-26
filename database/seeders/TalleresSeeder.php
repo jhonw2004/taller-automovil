@@ -24,13 +24,15 @@ class TalleresSeeder extends Seeder
 
             if (($geometry['type'] ?? '') !== 'Point') {
                 $inválidos++;
+
                 continue;
             }
 
             [$lon, $lat] = $geometry['coordinates'];
 
-            if (!is_numeric($lat) || !is_numeric($lon)) {
+            if (! is_numeric($lat) || ! is_numeric($lon)) {
                 $inválidos++;
+
                 continue;
             }
 
@@ -38,6 +40,7 @@ class TalleresSeeder extends Seeder
 
             if ($osmId && Taller::where('osm_id', $osmId)->exists()) {
                 $duplicados++;
+
                 continue;
             }
 
@@ -73,10 +76,10 @@ class TalleresSeeder extends Seeder
             $importados++;
         }
 
-        $this->command->info("=== Resumen de importación ===");
+        $this->command->info('=== Resumen de importación ===');
         $this->command->info("Talleres importados: $importados");
         $this->command->info("Saltados (duplicados): $duplicados");
         $this->command->info("Saltados (inválidos): $inválidos");
-        $this->command->info("Total procesados: " . count($features));
+        $this->command->info('Total procesados: '.count($features));
     }
 }
