@@ -1,6 +1,6 @@
 ---
 id: 004-solicitud-alta-taller
-status: draft
+status: implemented
 depends_on: [002-roles-permisos, 003-gestion-talleres]
 resumen: "Flujo público de alta de taller (sin cuenta) con máquina de estados y aprobación transaccional que crea el taller."
 ---
