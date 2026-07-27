@@ -30,7 +30,7 @@ class ErpPanelProvider extends PanelProvider
             ->id('erp')
             ->path('erp')
             ->viteTheme('resources/css/filament/erp/theme.css')
-            ->login()
+            ->login(\App\Filament\Auth\Pages\Login::class)
             ->authGuard('sistema')
             ->font('DM Sans')
             // Paleta Awesomic — misma paleta que AdminPanelProvider, ver notas ahí.

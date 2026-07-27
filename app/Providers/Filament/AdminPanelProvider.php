@@ -28,7 +28,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(\App\Filament\Auth\Pages\Login::class)
             ->authGuard('sistema')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->font('DM Sans')
