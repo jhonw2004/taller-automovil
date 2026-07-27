@@ -1,6 +1,19 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-26 (décima sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (décima sesión + hotfix login). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Hotfix 2026-07-26: login de Filament usa `username` en vez de `email`
+
+**Problema:** La tabla `usuarios_sistema` (001-identidad-autenticacion) nunca tuvo columna `email` — el email vive en `identidades` (relación 1:1). Filament por defecto usa `email` en su formulario de login, causando `SQL error: column email does not exist` al intentar iniciar sesión en `/admin` o `/erp`.
+
+**Solución:** Se creó `app/Filament/Auth/Pages/Login.php` que extiende `Filament\Auth\Pages\Login` y sobrescribe:
+- `getEmailFormComponent()` → campo `username` con label "Usuario"
+- `getCredentialsFromFormData()` → envía `['username' => ..., 'password' => ...]`
+- `throwFailureValidationException()` → error sobre `data.username`
+
+Registrado en ambos `PanelProvider` via `->login(\App\Filament\Auth\Pages\Login::class)`.
+
+**Solo afecta a usuarios sistema** (super admin y ERP). Los usuarios marketplace solo usan Google OAuth. No hay cambio en vistas Blade, el HTML lo genera Filament.
 
 ## Qué se hizo el 2026-07-26 (décima sesión): 008-empleados-usuarios-erp completo (268/268 tests verdes)
 
