@@ -1,6 +1,6 @@
 ---
 id: 008-empleados-usuarios-erp
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 002-roles-permisos, 003-gestion-talleres]
 resumen: "Empleados de taller con o sin acceso al ERP; creación de usuario sistema vinculado y gestión de cuenta dentro del taller."
 ---
