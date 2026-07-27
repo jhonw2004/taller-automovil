@@ -1,6 +1,6 @@
 ---
 id: 009-catalogo-servicios
-status: draft
+status: implemented
 depends_on: [003-gestion-talleres]
 resumen: "Catálogo de servicios ofrecidos por un taller, con precio base snapshot en líneas de orden/nota."
 ---

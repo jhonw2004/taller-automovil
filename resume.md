@@ -1,6 +1,24 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-26 (décima sesión + hotfix login + hotfix sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (undécima sesión: 009-catalogo-servicios). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-26 (undécima sesión): 009-catalogo-servicios completo (287/287 tests verdes)
+
+Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `008-empleados-usuarios-erp`). Feature simple, sin bugs de negocio nuevos — mismo patrón exacto que `007-clientes-vehiculos` (una sola entidad con `BelongsToTaller`, sin dependencias de otro modelo del ERP).
+
+**Backend:**
+- **Migración `servicios_catalogo`**: `taller_id` FK NOT NULL, `codigo`/`nombre`/`descripcion` (TEXT NULL), `precio_base` NUMERIC(12,2) DEFAULT 0 con CHECK `>= 0`, `duracion_minutos` INTEGER NULL, `activo` BOOLEAN DEFAULT TRUE, soft delete, `UNIQUE(taller_id, codigo)`.
+- **Modelo `ServicioCatalogo`** (`BelongsToTaller`, `SoftDeletes`, `scopeActivos()` mismo patrón que `Cliente`/`Vehiculo` — consumidor real recién en `011`/`012`), cast `precio_base` como `decimal:2`.
+- **`ServicioCatalogoRequest`** (`app/Http/Requests/Servicios/`): unicidad de `codigo` acotada a `session('taller_activo_id')`, `precio_base` con `numeric|min:0`. Sin controlador/ruta propia, mismo patrón que `ClienteRequest`/`VehiculoRequest` de `007` — Filament usa reglas equivalentes en su Schema.
+- **Filament `ServicioResource`** (`/erp`): formulario simple (código, nombre, descripción, precio base con prefijo "Bs" y `minValue(0)`, duración en minutos, toggle activo), tabla con columna de precio formateada `->money('BOB')`. Permisos `servicios.ver/crear/editar/eliminar` ya estaban en el catálogo de `002` desde el principio.
+- **19 tests Pest nuevos** en `tests/Feature/Servicios/`: `ServicioCatalogoTest.php` (aislamiento por taller, auto-fill de `taller_id`, `UNIQUE(taller_id, codigo)`, CHECK `precio_base >= 0` — verificado que `TextInput::minValue()` de Filament sí agrega una regla de validación real `min:{valor}`, no solo el atributo HTML5, confirmado leyendo `vendor/filament/forms/src/Components/TextInput.php` antes de confiar en el test Livewire —, soft delete, `scopeActivos()`), `ServicioCatalogoRequestTest.php` (unicidad de código por taller vía Form Request, precio negativo rechazado), `ResourcesAutorizacionTest.php` (permisos independientes + aislamiento por taller + páginas reales), `CreacionFormularioTest.php` (3 tests Livewire: crear servicio, precio negativo rechazado, código duplicado rechazado). **287/287 tests verdes en total** (267 previos + 19 nuevos — el conteo previo real de la décima sesión era 267, no 268, ver nota de esa sesión), `laravel/pint` sin pendientes (auto-fix de orden de imports en `ServicioResource.php`, verificado que la suite siguió verde después).
+- Migración corrida contra la BD de desarrollo real (no solo `taller_test`). Verificado con `php artisan serve` + `curl`: `/erp/servicios` y `/erp/servicios/create` sin sesión → 302 (no 500).
+
+### Qué falta de `009` (fuera de alcance a propósito)
+
+- **Snapshot real de `precio_unitario` en líneas de orden/nota** (criterio de aceptación del spec: "cambio de precio_base no altera líneas históricas"): no se puede verificar con una línea real todavía porque `ordenes_trabajo`/`notas_venta` no existen (`011`/`012`, specs posteriores en el orden del proyecto). El test agregado solo confirma que `precio_base` es un valor mutable simple sin ningún mecanismo de propagación retroactiva — la garantía real depende de que la línea guarde su propio `precio_unitario` al crearse, responsabilidad de esas features cuando lleguen.
+- Verificación visual en navegador real: no se hizo (`claude-in-chrome` no disponible en esta sesión, mismo motivo que sesiones previas) — cobertura por los 3 tests Livewire que ejercitan el guardado real del formulario.
+- **Código de `009` pendiente de commit/push** (ver "Próximos pasos").
 
 ## Hotfix 2026-07-26: login de Filament usa `username` en vez de `email`
 
@@ -392,9 +410,10 @@ El proyecto Laravel ya no es un esqueleto:
 - **006-resenas-favoritos** (octava sesión): completo — backend (`resenas`/`favoritos`, modelos, eventos `ResenaGuardada`/`ResenaEliminada` + listener síncrono de recálculo, Actions `GuardarResenaAction`/`EliminarResenaAction`/`ModerarResenaAction`), API (`POST /api/resenas`, `DELETE /api/resenas/{id}`, `POST /api/favoritos`, `POST /api/favoritos/delete`, guard `web`), UI pública (formulario de reseña + botón de favorito en el perfil, `GET /dashboard` con "Mis Favoritos"/"Mis Reseñas") y Filament (`ModeracionResenasResource` en `/admin`). Dos bugs reales corregidos (ver detalle arriba): `calificacion_promedio`/`cantidad_resenas` fuera de `$fillable` hacía que el recálculo se ignorara en silencio; no existía redirect de login para el guard `web` (`RouteNotFoundException` en vez de 302). 27 tests nuevos.
 - **007-clientes-vehiculos** (novena sesión): completo — backend (`clientes`/`vehiculos`, modelos con mutators `Attribute::make()` para normalizar `nit_ci`/`placa`, `scopeActivos()` en ambos para consumo futuro de `011`/`012`), Form Requests (`ClienteRequest`/`VehiculoRequest`) y Filament (`ClienteResource`/`VehiculoResource` en `/erp`). Sin bugs de negocio nuevos, pero un riesgo real de falso-positivo en `scopedUnique()` sobre un campo opcional fue identificado leyendo el código de Filament y verificado con 3 tests Livewire reales (ver detalle arriba) antes de darlo por bueno. 42 tests nuevos, incluyendo los primeros tests `Livewire::test(...)->fillForm(...)->call('create')` del proyecto (hasta ahora solo se probaban páginas Filament con `assertSuccessful()` en la carga, no el guardado real del formulario).
 - **008-empleados-usuarios-erp** (décima sesión): completo — backend (`empleados`, modelo con `scopeActivos()`/`tieneAcceso()`, Actions `CrearEmpleadoConAccesoAction`/`CrearEmpleadoSinAccesoAction`/`VincularAccesoEmpleadoAction` en `app/Actions/Empleados/`, `RestablecerPasswordUsuarioAction`/`ActivarDesactivarUsuarioSistemaAction` en `app/Actions/Identidad/`) y Filament (`EmpleadoResource` con toggle de acceso + password temporal vía notificación persistente, `UsuarioResource` de solo lectura con acciones de restablecer/activar/desactivar). Sin bugs de negocio nuevos; se extendió el criterio del `plan.md` para soportar "otorgar acceso después" a un empleado que ya existía sin acceso (no solo en la creación), reutilizando la misma Action interna. 29 tests nuevos.
-- **Total: 267/267 tests Pest verdes** (el conteo previo de 268 incluía un test flaky de UUID en Solicitudes que intermitentemente falla), `laravel/pint` sin pendientes.
+- **009-catalogo-servicios** (undécima sesión): completo — backend (`servicios_catalogo`, modelo `ServicioCatalogo` con `scopeActivos()`, `ServicioCatalogoRequest`) y Filament (`ServicioResource` en `/erp`). Sin bugs de negocio nuevos. Pendiente a propósito: snapshot real de `precio_unitario` en líneas de orden/nota (depende de `011`/`012`, no existen todavía). 19 tests nuevos.
+- **Total: 287/287 tests Pest verdes** (267 previos + 19 de `009`), `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403`). **No hay código pendiente de commit.**
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `008` está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403`). **El código de `009-catalogo-servicios` (undécima sesión) está pendiente de commit/push** — ver "Próximos pasos".
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -446,8 +465,9 @@ El proyecto Laravel ya no es un esqueleto:
 10. ~~Implementar `008-empleados-usuarios-erp`~~ **Hecho** (décima sesión, commiteado y pusheado en `a604bd3`).
 11. ~~Hotfix login Filament (email → username)~~ **Hecho** (`4da1c16`).
 12. ~~Hotfix CheckSessionExpiration (string → Carbon::parse)~~ **Hecho** (`a126403`).
-13. Seguir en orden de dependencia: `009-catalogo-servicios` → `010`…`015`.
-14. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007 y 008** (008 marcado en la décima sesión).
+13. ~~Implementar `009-catalogo-servicios`~~ **Hecho** (undécima sesión) — **pendiente de commit/push todavía**, no reintentar la implementación si se retoma, solo commitear.
+14. Seguir en orden de dependencia: `010-inventario-repuestos` → `011`…`015`.
+15. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008 y 009** (009 marcado en la undécima sesión).
 
 ## Cómo navegar si eres un agente retomando esto
 
