@@ -20,7 +20,7 @@ Siguiendo el orden estricto de `AGENTS.md` (paso 7, primero de las features `007
 - **Bloqueo de soft delete por hijos activos** (`constitution.md` §3.13: "no se borra si hay órdenes en curso") — no se puede implementar todavía porque `ordenes_trabajo`/`notas_venta` no existen (`011`/`012`, specs posteriores en el orden del proyecto). El soft delete en sí (no bloqueante) ya funciona. Mismo patrón de brecha diferida que `003-gestion-talleres` dejó documentado para el conteo de hijas activas de un taller.
 - **Filtrado real de "inactivo no seleccionable en orden nueva"**: se agregó `scopeActivos()` en ambos modelos como base reutilizable, pero el consumidor real (el selector de cliente/vehículo al crear una orden) es de `011-ordenes-trabajo`.
 - Verificación visual en navegador real: no se hizo (mismo motivo que sesiones previas, `claude-in-chrome` no disponible) — esta vez la cobertura HTTP es más fuerte que en sesiones anteriores porque se agregaron tests Livewire reales que ejercitan el guardado del formulario (`fillForm()->call('create')`), no solo la carga de la página.
-- **Código de `007` todavía no está commiteado ni pusheado.**
+- **Código de `007` commiteado y pusheado en `b8802c3` en `origin/specs/planificacion`.**
 
 ## Qué se hizo el 2026-07-26 (octava sesión): 006-resenas-favoritos completo (197/197 tests verdes)
 
@@ -349,7 +349,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **007-clientes-vehiculos** (novena sesión): completo — backend (`clientes`/`vehiculos`, modelos con mutators `Attribute::make()` para normalizar `nit_ci`/`placa`, `scopeActivos()` en ambos para consumo futuro de `011`/`012`), Form Requests (`ClienteRequest`/`VehiculoRequest`) y Filament (`ClienteResource`/`VehiculoResource` en `/erp`). Sin bugs de negocio nuevos, pero un riesgo real de falso-positivo en `scopedUnique()` sobre un campo opcional fue identificado leyendo el código de Filament y verificado con 3 tests Livewire reales (ver detalle arriba) antes de darlo por bueno. 42 tests nuevos, incluyendo los primeros tests `Livewire::test(...)->fillForm(...)->call('create')` del proyecto (hasta ahora solo se probaban páginas Filament con `assertSuccessful()` en la carga, no el guardado real del formulario).
 - **Total: 239/239 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `006-resenas-favoritos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c`). **El código de `007-clientes-vehiculos` (novena sesión) todavía no está commiteado.**
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `007-clientes-vehiculos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3`). **No hay código pendiente de commit.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -397,7 +397,7 @@ El proyecto Laravel ya no es un esqueleto:
 6. ~~Implementar `004-solicitud-alta-taller`~~ **Hecho** (commit `c42d59e` en `origin/specs/planificacion`).
 7. ~~Implementar `005-marketplace-busqueda-perfil` + `016-ui-design-system`~~ **Hecho** (commit `b31d74e` en `origin/specs/planificacion`).
 8. ~~Implementar `006-resenas-favoritos`~~ **Hecho** (octava sesión, commiteado y pusheado en `e8aed6c`). Se resolvió (b) de la nota anterior: el rol `MARKETPLACE_USER`/permisos `marketplace.*` siguen sin usarse a propósito — la autorización de reseñas/favoritos es solo `auth:web`, sin capa de permisos adicional (confirma la recomendación ya documentada en la brecha estructural de la tercera sesión).
-9. ~~Implementar `007-clientes-vehiculos`~~ **Hecho** (novena sesión, todavía sin commitear — ver "Git" arriba).
+9. ~~Implementar `007-clientes-vehiculos`~~ **Hecho** (novena sesión, commiteado y pusheado en `b8802c3`).
 10. Seguir en orden de dependencia: `008-empleados-usuarios-erp` → `009`…`015`.
 11. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006 y 007** (007 marcado en la novena sesión).
 
