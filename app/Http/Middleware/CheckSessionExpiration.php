@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Http\Request;
@@ -26,10 +27,7 @@ class CheckSessionExpiration
 
         $ultimaActividad = $request->session()->get('sistema_last_activity');
 
-        // No usar diffInMinutes()->'> N': en Carbon 3.x devuelve un valor con signo (negativo
-        // si $ultimaActividad es pasado), no el valor absoluto que versiones anteriores daban
-        // por defecto — comparar fechas directamente evita esa ambigüedad.
-        if ($ultimaActividad && $ultimaActividad->lt(now()->subMinutes(self::MINUTOS_INACTIVIDAD))) {
+        if ($ultimaActividad && Carbon::parse($ultimaActividad)->lt(now()->subMinutes(self::MINUTOS_INACTIVIDAD))) {
             Auth::guard('sistema')->logout();
             $request->session()->regenerate();
 

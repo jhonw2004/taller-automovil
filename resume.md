@@ -1,6 +1,6 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-26 (décima sesión + hotfix login). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-26 (décima sesión + hotfix login + hotfix sesión). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
 
 ## Hotfix 2026-07-26: login de Filament usa `username` en vez de `email`
 
@@ -14,6 +14,12 @@
 Registrado en ambos `PanelProvider` via `->login(\App\Filament\Auth\Pages\Login::class)`.
 
 **Solo afecta a usuarios sistema** (super admin y ERP). Los usuarios marketplace solo usan Google OAuth. No hay cambio en vistas Blade, el HTML lo genera Filament.
+
+## Hotfix 2026-07-26: `CheckSessionExpiration` rompía login con `->lt()` sobre string
+
+**Problema:** `CheckSessionExpiration.php` guardaba `now()` en sesión (`sistema_last_activity`) y luego llamaba `$ultimaActividad->lt(...)`. PHP serializa objetos al almacenarlos en sesión — al recuperarlo era un **string**, no un objeto Carbon, causando `Call to a member function lt() on string` al cargar cualquier página del panel.
+
+**Solución:** Envolver `$ultimaActividad` en `Carbon::parse()` antes de llamar a `->lt()`.
 
 ## Qué se hizo el 2026-07-26 (décima sesión): 008-empleados-usuarios-erp completo (268/268 tests verdes)
 
