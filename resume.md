@@ -25,7 +25,7 @@ Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `007-clientes-vehicu
 - **Auditoría real (`015-auditoria`)**: igual que `003`/`004`, se usa `activity()` de `spatie/laravel-activitylog` como stand-in; la tabla `auditoria_eventos` no existe todavía.
 - **"Activo por taller" para usuarios con más de un taller**: brecha documentada arriba — `UsuarioSistema.activo` es global, no hay forma de desactivar un usuario solo en un taller sin afectar los demás. Caso raro, no bloqueante para el MVP.
 - Verificación visual en navegador real (ver arriba).
-- **Código de `008` pendiente de commit y push** (el usuario no lo ha pedido todavía en esta sesión).
+- **Código de `008` commiteado y pusheado en `a604bd3` en `origin/specs/planificacion`.**
 
 ## Qué se hizo el 2026-07-26 (novena sesión): 007-clientes-vehiculos completo (239/239 tests verdes)
 
@@ -375,7 +375,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **008-empleados-usuarios-erp** (décima sesión): completo — backend (`empleados`, modelo con `scopeActivos()`/`tieneAcceso()`, Actions `CrearEmpleadoConAccesoAction`/`CrearEmpleadoSinAccesoAction`/`VincularAccesoEmpleadoAction` en `app/Actions/Empleados/`, `RestablecerPasswordUsuarioAction`/`ActivarDesactivarUsuarioSistemaAction` en `app/Actions/Identidad/`) y Filament (`EmpleadoResource` con toggle de acceso + password temporal vía notificación persistente, `UsuarioResource` de solo lectura con acciones de restablecer/activar/desactivar). Sin bugs de negocio nuevos; se extendió el criterio del `plan.md` para soportar "otorgar acceso después" a un empleado que ya existía sin acceso (no solo en la creación), reutilizando la misma Action interna. 29 tests nuevos.
 - **Total: 268/268 tests Pest verdes**, `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `007-clientes-vehiculos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3`). **El código de `008-empleados-usuarios-erp` (décima sesión) todavía no está commiteado.**
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `008-empleados-usuarios-erp` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3`). **No hay código pendiente de commit.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -424,7 +424,7 @@ El proyecto Laravel ya no es un esqueleto:
 7. ~~Implementar `005-marketplace-busqueda-perfil` + `016-ui-design-system`~~ **Hecho** (commit `b31d74e` en `origin/specs/planificacion`).
 8. ~~Implementar `006-resenas-favoritos`~~ **Hecho** (octava sesión, commiteado y pusheado en `e8aed6c`). Se resolvió (b) de la nota anterior: el rol `MARKETPLACE_USER`/permisos `marketplace.*` siguen sin usarse a propósito — la autorización de reseñas/favoritos es solo `auth:web`, sin capa de permisos adicional (confirma la recomendación ya documentada en la brecha estructural de la tercera sesión).
 9. ~~Implementar `007-clientes-vehiculos`~~ **Hecho** (novena sesión, commiteado y pusheado en `b8802c3`).
-10. ~~Implementar `008-empleados-usuarios-erp`~~ **Hecho** (décima sesión, **pendiente de commit/push**). Seguir en orden de dependencia: `009`…`015`.
+10. ~~Implementar `008-empleados-usuarios-erp`~~ **Hecho** (décima sesión, commiteado y pusheado en `a604bd3`). Seguir en orden de dependencia: `009`…`015`.
 11. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007 y 008** (008 marcado en la décima sesión).
 
 ## Cómo navegar si eres un agente retomando esto
