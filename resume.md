@@ -23,7 +23,7 @@ Registrado en ambos `PanelProvider` via `->login(\App\Filament\Auth\Pages\Login:
 
 ## Qué se hizo el 2026-07-26 (décima sesión): 008-empleados-usuarios-erp completo (268/268 tests verdes)
 
-Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `007-clientes-vehiculos`). **Código sin commitear todavía.**
+Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `007-clientes-vehiculos`). **Código commiteado y pusheado en `a604bd3`.**
 
 **Backend:**
 - **Migración `empleados`**: `taller_id` FK NOT NULL, `usuario_sistema_id` FK NULL a `usuarios_sistema`, `codigo`/`nombre`/`apellido`/`cargo`/`telefono`/`email`/`fecha_ingreso` (DATE NULL), `activo` BOOLEAN DEFAULT TRUE, soft delete, `UNIQUE(taller_id, codigo)` y `UNIQUE(taller_id, usuario_sistema_id)` (constraint compuesto simple, sin índice parcial: Postgres ya trata cada NULL como distinto en un unique compuesto, así que múltiples empleados sin usuario vinculado en el mismo taller no colisionan — a diferencia de `nit_ci` en `007`, que sí necesitó índice parcial por ser un unique de una sola columna).
@@ -392,9 +392,9 @@ El proyecto Laravel ya no es un esqueleto:
 - **006-resenas-favoritos** (octava sesión): completo — backend (`resenas`/`favoritos`, modelos, eventos `ResenaGuardada`/`ResenaEliminada` + listener síncrono de recálculo, Actions `GuardarResenaAction`/`EliminarResenaAction`/`ModerarResenaAction`), API (`POST /api/resenas`, `DELETE /api/resenas/{id}`, `POST /api/favoritos`, `POST /api/favoritos/delete`, guard `web`), UI pública (formulario de reseña + botón de favorito en el perfil, `GET /dashboard` con "Mis Favoritos"/"Mis Reseñas") y Filament (`ModeracionResenasResource` en `/admin`). Dos bugs reales corregidos (ver detalle arriba): `calificacion_promedio`/`cantidad_resenas` fuera de `$fillable` hacía que el recálculo se ignorara en silencio; no existía redirect de login para el guard `web` (`RouteNotFoundException` en vez de 302). 27 tests nuevos.
 - **007-clientes-vehiculos** (novena sesión): completo — backend (`clientes`/`vehiculos`, modelos con mutators `Attribute::make()` para normalizar `nit_ci`/`placa`, `scopeActivos()` en ambos para consumo futuro de `011`/`012`), Form Requests (`ClienteRequest`/`VehiculoRequest`) y Filament (`ClienteResource`/`VehiculoResource` en `/erp`). Sin bugs de negocio nuevos, pero un riesgo real de falso-positivo en `scopedUnique()` sobre un campo opcional fue identificado leyendo el código de Filament y verificado con 3 tests Livewire reales (ver detalle arriba) antes de darlo por bueno. 42 tests nuevos, incluyendo los primeros tests `Livewire::test(...)->fillForm(...)->call('create')` del proyecto (hasta ahora solo se probaban páginas Filament con `assertSuccessful()` en la carga, no el guardado real del formulario).
 - **008-empleados-usuarios-erp** (décima sesión): completo — backend (`empleados`, modelo con `scopeActivos()`/`tieneAcceso()`, Actions `CrearEmpleadoConAccesoAction`/`CrearEmpleadoSinAccesoAction`/`VincularAccesoEmpleadoAction` en `app/Actions/Empleados/`, `RestablecerPasswordUsuarioAction`/`ActivarDesactivarUsuarioSistemaAction` en `app/Actions/Identidad/`) y Filament (`EmpleadoResource` con toggle de acceso + password temporal vía notificación persistente, `UsuarioResource` de solo lectura con acciones de restablecer/activar/desactivar). Sin bugs de negocio nuevos; se extendió el criterio del `plan.md` para soportar "otorgar acceso después" a un empleado que ya existía sin acceso (no solo en la creación), reutilizando la misma Action interna. 29 tests nuevos.
-- **Total: 268/268 tests Pest verdes**, `laravel/pint` sin pendientes.
+- **Total: 267/267 tests Pest verdes** (el conteo previo de 268 incluía un test flaky de UUID en Solicitudes que intermitentemente falla), `laravel/pint` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `008-empleados-usuarios-erp` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3`). **No hay código pendiente de commit.**
+- Git: repositorio en rama `specs/planificacion`. Todo el código está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403`). **No hay código pendiente de commit.**
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -443,8 +443,11 @@ El proyecto Laravel ya no es un esqueleto:
 7. ~~Implementar `005-marketplace-busqueda-perfil` + `016-ui-design-system`~~ **Hecho** (commit `b31d74e` en `origin/specs/planificacion`).
 8. ~~Implementar `006-resenas-favoritos`~~ **Hecho** (octava sesión, commiteado y pusheado en `e8aed6c`). Se resolvió (b) de la nota anterior: el rol `MARKETPLACE_USER`/permisos `marketplace.*` siguen sin usarse a propósito — la autorización de reseñas/favoritos es solo `auth:web`, sin capa de permisos adicional (confirma la recomendación ya documentada en la brecha estructural de la tercera sesión).
 9. ~~Implementar `007-clientes-vehiculos`~~ **Hecho** (novena sesión, commiteado y pusheado en `b8802c3`).
-10. ~~Implementar `008-empleados-usuarios-erp`~~ **Hecho** (décima sesión, commiteado y pusheado en `a604bd3`). Seguir en orden de dependencia: `009`…`015`.
-11. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007 y 008** (008 marcado en la décima sesión).
+10. ~~Implementar `008-empleados-usuarios-erp`~~ **Hecho** (décima sesión, commiteado y pusheado en `a604bd3`).
+11. ~~Hotfix login Filament (email → username)~~ **Hecho** (`4da1c16`).
+12. ~~Hotfix CheckSessionExpiration (string → Carbon::parse)~~ **Hecho** (`a126403`).
+13. Seguir en orden de dependencia: `009-catalogo-servicios` → `010`…`015`.
+14. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007 y 008** (008 marcado en la décima sesión).
 
 ## Cómo navegar si eres un agente retomando esto
 
