@@ -23,6 +23,7 @@
                     <x-button type="submit" variant="ghost">Cerrar sesión</x-button>
                 </form>
             @else
+                <x-button :href="route('auth.google.redirect')" variant="ghost">Registrarse</x-button>
                 <x-button :href="route('auth.google.redirect')" variant="primary">Iniciar sesión</x-button>
             @endif
         </div>
