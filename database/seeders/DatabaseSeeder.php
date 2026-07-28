@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PermisoSeeder::class,
             RolSistemaSeeder::class,
             SuperAdminSeeder::class,
+            MetodoPagoSeeder::class,
         ]);
     }
 }

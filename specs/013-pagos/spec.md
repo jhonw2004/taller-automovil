@@ -1,6 +1,6 @@
 ---
 id: 013-pagos
-status: draft
+status: implemented
 depends_on: [012-notas-venta]
 resumen: "Registro de pagos (parciales o totales) contra una nota de venta, con recálculo transaccional de saldo y estado."
 ---

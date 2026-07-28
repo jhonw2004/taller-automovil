@@ -1,7 +1,9 @@
 <?php
 
 use App\Exceptions\BusinessException;
+use App\Models\MetodoPago;
 use App\Models\NotaVenta;
+use App\Models\Pago;
 use App\Models\Repuesto;
 use App\Models\ServicioCatalogo;
 use App\Models\Taller;
@@ -163,9 +165,9 @@ it('rechaza cuando el subtotal de la linea no coincide con cantidad*precio-descu
     ]))->toThrow(QueryException::class);
 });
 
-it('recalcularTotales suma las lineas y actualiza saldo respetando monto_pagado', function () {
+it('recalcularTotales suma las lineas, la suma de pagos confirmados y actualiza estado', function () {
     $taller = Taller::factory()->create();
-    $nota = crearNotaEnTaller($taller, ['monto_pagado' => 20, 'total' => 20, 'saldo' => 0, 'subtotal' => 20]);
+    $nota = crearNotaEnTaller($taller);
     $nota->lineas()->create([
         'servicio_catalogo_id' => null,
         'repuesto_id' => null,
@@ -175,13 +177,18 @@ it('recalcularTotales suma las lineas y actualiza saldo respetando monto_pagado'
         'descuento' => 0,
         'subtotal' => 100,
     ]);
+    $metodo = MetodoPago::factory()->create();
+    Pago::factory()->create(['nota_venta_id' => $nota->id, 'metodo_pago_id' => $metodo->id, 'monto' => 20]);
+    Pago::factory()->anulado()->create(['nota_venta_id' => $nota->id, 'metodo_pago_id' => $metodo->id, 'monto' => 5]);
 
     $nota->recalcularTotales(10);
 
     expect((float) $nota->subtotal)->toBe(100.0);
     expect((float) $nota->descuento)->toBe(10.0);
     expect((float) $nota->total)->toBe(90.0);
+    expect((float) $nota->monto_pagado)->toBe(20.0);
     expect((float) $nota->saldo)->toBe(70.0);
+    expect($nota->estado)->toBe('PENDIENTE');
 });
 
 it('recalcularTotales rechaza un descuento mayor al subtotal', function () {

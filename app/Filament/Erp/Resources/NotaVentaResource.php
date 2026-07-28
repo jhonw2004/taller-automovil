@@ -6,6 +6,7 @@ use App\Filament\Erp\Resources\NotaVentaResource\Pages\CreateNotaVenta;
 use App\Filament\Erp\Resources\NotaVentaResource\Pages\EditNotaVenta;
 use App\Filament\Erp\Resources\NotaVentaResource\Pages\ListNotasVenta;
 use App\Filament\Erp\Resources\NotaVentaResource\RelationManagers\LineasRelationManager;
+use App\Filament\Erp\Resources\NotaVentaResource\RelationManagers\PagosRelationManager;
 use App\Models\Cliente;
 use App\Models\NotaVenta;
 use App\Models\OrdenTrabajo;
@@ -34,8 +35,8 @@ use Illuminate\Database\Eloquent\Model;
  * `CrearNotaVentaDesdeOrdenAction`/`CrearNotaVentaDirectaAction` (nunca `NotaVenta::create()`
  * directo, ver `CreateNotaVenta`) — el formulario alterna entre ambos orígenes con el campo
  * `origen`, que no es una columna del modelo. `estado` no es editable: solo cambia vía
- * `AnularNotaVentaAction` (acción de cabecera en `EditNotaVenta`) o, en `013-pagos`, al registrar
- * pagos (no implementado todavía).
+ * `AnularNotaVentaAction` (acción de cabecera en `EditNotaVenta`) o, desde `013-pagos`, al
+ * registrar/anular un pago (`PagosRelationManager`, que invoca `NotaVenta::recalcularTotales()`).
  */
 class NotaVentaResource extends Resource
 {
@@ -241,6 +242,7 @@ class NotaVentaResource extends Resource
     {
         return [
             LineasRelationManager::class,
+            PagosRelationManager::class,
         ];
     }
 

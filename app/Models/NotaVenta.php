@@ -63,16 +63,30 @@ class NotaVenta extends Model
         return $this->hasMany(NotaVentaLinea::class, 'nota_venta_id');
     }
 
+    public function pagos(): HasMany
+    {
+        return $this->hasMany(Pago::class, 'nota_venta_id');
+    }
+
     /**
-     * Recalcula `subtotal`/`total`/`saldo` a partir de las líneas (012-spec.md: "subtotal = suma
-     * de subtotales de líneas no anuladas" — las líneas de nota no tienen estado propio en el MVP,
-     * así que todas cuentan). Se invoca en la misma transacción que la creación de líneas
-     * (constitution.md §3.7). `monto_pagado` no se toca aquí — su único escritor es
-     * `013-pagos` (no existe todavía); se recalcula `saldo` contra el valor actual para mantener el
-     * CHECK `saldo = total - monto_pagado` consistente incluso antes de que exista esa feature.
+     * Recalcula `subtotal`/`total`/`monto_pagado`/`saldo`/`estado` (012-spec.md + 013-spec.md).
+     * `subtotal` = suma de subtotales de líneas (sin estado propio en el MVP, todas cuentan).
+     * `monto_pagado` ya no es un valor que se "respeta": desde que `013-pagos` existe, es siempre
+     * la suma de `pagos` en estado `CONFIRMADO` — su único escritor real es
+     * `RegistrarPagoAction`/`AnularPagoAction`, que llaman a este método tras crear/anular un pago
+     * (nunca escriben la columna directamente). `estado` se deriva de `saldo`/`monto_pagado`
+     * (013-spec.md: `saldo=0` y `total>0` → `PAGADA`; `saldo>0` y `monto_pagado>0` → `PENDIENTE`;
+     * `monto_pagado=0` → `EMITIDA`) salvo que la nota ya esté `ANULADA` — una nota anulada nunca se
+     * recalcula (013-spec.md: los pagos nuevos sobre una nota anulada se rechazan antes de llegar
+     * aquí, pero el guard queda explícito por si se invoca directamente). Se invoca en la misma
+     * transacción que la creación de líneas o de un pago (constitution.md §3.7).
      */
     public function recalcularTotales(?float $descuento = null): void
     {
+        if ($this->estado === 'ANULADA') {
+            return;
+        }
+
         $subtotal = (float) $this->lineas()->sum('subtotal');
         $descuentoAplicado = $descuento ?? (float) $this->descuento;
 
@@ -85,16 +99,24 @@ class NotaVenta extends Model
         }
 
         $total = $subtotal - $descuentoAplicado;
-        $montoPagado = (float) $this->monto_pagado;
+        $montoPagado = round((float) $this->pagos()->where('estado', 'CONFIRMADO')->sum('monto'), 2);
 
         if ($montoPagado > $total) {
-            throw new BusinessException('El monto pagado no puede superar el nuevo total.');
+            throw new BusinessException('El monto pagado no puede superar el total de la nota.');
         }
+
+        $saldo = round($total - $montoPagado, 2);
 
         $this->subtotal = $subtotal;
         $this->descuento = $descuentoAplicado;
         $this->total = $total;
-        $this->saldo = $total - $montoPagado;
+        $this->monto_pagado = $montoPagado;
+        $this->saldo = $saldo;
+        $this->estado = match (true) {
+            $total > 0 && $saldo <= 0.0 => 'PAGADA',
+            $montoPagado > 0 => 'PENDIENTE',
+            default => 'EMITIDA',
+        };
         $this->save();
     }
 }
