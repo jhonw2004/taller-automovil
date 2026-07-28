@@ -3,6 +3,7 @@
 use App\Actions\Ordenes\AnularOrdenTrabajoAction;
 use App\Exceptions\BusinessException;
 use App\Models\Cliente;
+use App\Models\NotaVenta;
 use App\Models\OrdenTrabajo;
 use App\Models\OrdenTrabajoHistorialEstado;
 use App\Models\Repuesto;
@@ -108,4 +109,82 @@ it('congela los totales existentes en vez de recalcularlos a cero al anular', fu
     $anulada = app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo');
 
     expect((float) $anulada->total)->toBe(90.0);
+});
+
+// 012-notas-venta: resuelve la brecha documentada en 011-spec.md (bloqueo/auto-anulación según
+// el estado de las notas de venta asociadas), diferida hasta que 012 existiera.
+
+it('bloquea la anulacion de la orden si tiene una nota de venta PENDIENTE', function () {
+    $orden = ordenParaAnular('EN_PROGRESO');
+    $nota = NotaVenta::factory()->create([
+        'taller_id' => $orden->taller_id,
+        'orden_trabajo_id' => $orden->id,
+        'estado' => 'PENDIENTE',
+    ]);
+
+    expect(fn () => app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo'))
+        ->toThrow(BusinessException::class, "Resuelva la nota {$nota->codigo} primero — tiene pagos registrados.");
+
+    expect($orden->fresh()->estado)->not->toBe('ANULADA');
+    expect($nota->fresh()->estado)->toBe('PENDIENTE');
+});
+
+it('bloquea la anulacion de la orden si tiene una nota de venta PAGADA', function () {
+    $orden = ordenParaAnular('EN_PROGRESO');
+    NotaVenta::factory()->create([
+        'taller_id' => $orden->taller_id,
+        'orden_trabajo_id' => $orden->id,
+        'estado' => 'PAGADA',
+    ]);
+
+    expect(fn () => app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo'))
+        ->toThrow(BusinessException::class);
+
+    expect($orden->fresh()->estado)->not->toBe('ANULADA');
+});
+
+it('auto-anula una nota de venta EMITIDA de la orden en la misma transaccion', function () {
+    $orden = ordenParaAnular('EN_PROGRESO');
+    $nota = NotaVenta::factory()->create([
+        'taller_id' => $orden->taller_id,
+        'orden_trabajo_id' => $orden->id,
+        'estado' => 'EMITIDA',
+    ]);
+
+    app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo');
+
+    expect($nota->fresh()->estado)->toBe('ANULADA');
+});
+
+it('auto-anula multiples notas EMITIDA activas (se permiten varias notas por orden)', function () {
+    $orden = ordenParaAnular('EN_PROGRESO');
+    $nota1 = NotaVenta::factory()->create(['taller_id' => $orden->taller_id, 'orden_trabajo_id' => $orden->id, 'estado' => 'EMITIDA']);
+    $nota2 = NotaVenta::factory()->create(['taller_id' => $orden->taller_id, 'orden_trabajo_id' => $orden->id, 'estado' => 'EMITIDA']);
+    $notaYaAnulada = NotaVenta::factory()->create(['taller_id' => $orden->taller_id, 'orden_trabajo_id' => $orden->id, 'estado' => 'ANULADA']);
+
+    app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo');
+
+    expect($nota1->fresh()->estado)->toBe('ANULADA');
+    expect($nota2->fresh()->estado)->toBe('ANULADA');
+    expect($notaYaAnulada->fresh()->estado)->toBe('ANULADA');
+});
+
+it('no repone inventario por una nota vinculada a la orden al auto-anularla (el descuento ya ocurrio en la orden)', function () {
+    $orden = ordenParaAnular('EN_PROGRESO');
+    $repuesto = Repuesto::factory()->create(['taller_id' => $orden->taller_id, 'stock_actual' => 10]);
+    $nota = NotaVenta::factory()->create(['taller_id' => $orden->taller_id, 'orden_trabajo_id' => $orden->id, 'estado' => 'EMITIDA']);
+    $nota->lineas()->create([
+        'servicio_catalogo_id' => null,
+        'repuesto_id' => $repuesto->id,
+        'descripcion' => $repuesto->nombre,
+        'cantidad' => 5,
+        'precio_unitario' => 20,
+        'descuento' => 0,
+        'subtotal' => 100,
+    ]);
+
+    app(AnularOrdenTrabajoAction::class)->execute($orden, 'Motivo');
+
+    expect((float) $repuesto->fresh()->stock_actual)->toBe(10.0);
+    expect($nota->fresh()->estado)->toBe('ANULADA');
 });

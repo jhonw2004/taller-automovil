@@ -3,6 +3,7 @@
 namespace App\Actions\Ordenes;
 
 use App\Actions\Inventario\RegistrarMovimientoInventarioAction;
+use App\Actions\Notas\AnularNotaVentaAction;
 use App\Exceptions\BusinessException;
 use App\Models\OrdenTrabajo;
 use App\Models\OrdenTrabajoHistorialEstado;
@@ -14,11 +15,13 @@ use Illuminate\Support\Str;
  * 1. Motivo obligatorio + la transición actual→ANULADA debe estar permitida (`TransicionesEstadoOrden`,
  *    misma tabla que usa `CambiarEstadoOrdenAction` — p. ej. una orden `ENTREGADA` no tiene ningún
  *    destino permitido, tampoco ANULADA).
- * 2. **Brecha documentada a propósito**: el spec exige bloquear si la orden tiene una nota de venta
- *    PENDIENTE/PAGADA y auto-anular una nota EMITIDA — `012-notas-venta` no existe todavía (no es
- *    dependencia de `011` en `depends_on`), así que ese paso no puede implementarse: no hay tabla
- *    `notas_venta` que consultar. Ninguna orden puede tener una nota de venta real todavía, por lo
- *    que omitirlo no cambia el comportamiento observable hoy. Debe agregarse aquí cuando `012` exista.
+ * 2. **Brecha de 011 resuelta en esta sesión (012-notas-venta ya existe)**: si alguna nota de venta
+ *    activa (no ANULADA) de la orden está en `PENDIENTE`/`PAGADA`, se bloquea la anulación
+ *    ("Resuelva la nota NV-XXX primero — tiene pagos registrados", 011-spec.md). Si no hay ninguna
+ *    bloqueante, toda nota `EMITIDA` restante se auto-anula vía `AnularNotaVentaAction` (misma
+ *    transacción) antes de continuar. `012-spec.md` permite múltiples notas activas por orden, así
+ *    que la regla —escrita en singular en 011-spec.md ("la nota")— se aplica a cada nota activa,
+ *    no solo a la primera.
  * 3. Repone stock (AJUSTE_POSITIVO vía `RegistrarMovimientoInventarioAction`) por cada línea de
  *    repuesto en estado ENTREGADO.
  * 4. Marca todas las líneas no ANULADAS como ANULADAS. Los totales (`subtotal_*`/`descuento`/`total`)
@@ -43,6 +46,22 @@ class AnularOrdenTrabajoAction
         }
 
         return DB::transaction(function () use ($orden, $motivo, $usuarioSistemaId) {
+            $notasActivas = $orden->notasVenta()->where('estado', '!=', 'ANULADA')->get();
+
+            $notaBloqueante = $notasActivas->first(fn ($nota) => in_array($nota->estado, ['PENDIENTE', 'PAGADA'], true));
+
+            if ($notaBloqueante) {
+                throw new BusinessException("Resuelva la nota {$notaBloqueante->codigo} primero — tiene pagos registrados.");
+            }
+
+            foreach ($notasActivas as $nota) {
+                app(AnularNotaVentaAction::class)->execute(
+                    $nota,
+                    "Auto-anulada por anulación de la orden {$orden->codigo}.",
+                    $usuarioSistemaId,
+                );
+            }
+
             $estadoAnterior = $orden->estado;
 
             $lineasRepuestoEntregadas = $orden->lineasRepuestos()->where('estado', 'ENTREGADO')->get();

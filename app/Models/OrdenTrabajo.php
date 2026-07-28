@@ -93,6 +93,16 @@ class OrdenTrabajo extends Model
     }
 
     /**
+     * Notas de venta originadas desde esta orden (012-notas-venta). Se permiten múltiples notas
+     * activas (no anuladas) por orden (012-spec.md) — usado por `AnularOrdenTrabajoAction` para
+     * bloquear/auto-anular según el estado de cada una.
+     */
+    public function notasVenta(): HasMany
+    {
+        return $this->hasMany(NotaVenta::class, 'orden_trabajo_id');
+    }
+
+    /**
      * Recalcula `subtotal_servicios`/`subtotal_repuestos`/`total` a partir de las líneas no
      * ANULADAS (011-spec.md: "Líneas anuladas no suman al total"). Se invoca dentro de la misma
      * transacción que cualquier alta/baja/cambio de estado de línea o de `descuento`

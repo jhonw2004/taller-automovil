@@ -1,6 +1,6 @@
 ---
 id: 012-notas-venta
-status: draft
+status: implemented
 depends_on: [011-ordenes-trabajo]
 resumen: "Documento interno no fiscal de cobro (por servicios/repuestos/mixto), con o sin orden de origen, y saldo derivado de pagos."
 ---
