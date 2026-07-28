@@ -7,6 +7,7 @@ import searchForm from './alpine/components/search';
 import starRating from './alpine/components/rating';
 import resenaForm from './alpine/components/resena-form';
 import favoritoToggle from './alpine/components/favorito';
+import notificacionesPanel from './alpine/components/notificaciones';
 
 registerSearchStore(Alpine);
 Alpine.data('map', map);
@@ -15,6 +16,7 @@ Alpine.data('searchForm', searchForm);
 Alpine.data('starRating', starRating);
 Alpine.data('resenaForm', resenaForm);
 Alpine.data('favoritoToggle', favoritoToggle);
+Alpine.data('notificacionesPanel', notificacionesPanel);
 
 window.Alpine = Alpine;
 Alpine.start();

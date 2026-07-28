@@ -62,4 +62,9 @@ class UsuarioMarketplace extends Authenticatable
     {
         return $this->hasMany(Favorito::class, 'usuario_marketplace_id');
     }
+
+    public function notificaciones(): HasMany
+    {
+        return $this->hasMany(Notificacion::class, 'usuario_marketplace_id');
+    }
 }

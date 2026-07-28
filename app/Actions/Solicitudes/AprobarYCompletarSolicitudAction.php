@@ -7,6 +7,7 @@ use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
 use App\Models\Taller;
 use App\Models\UsuarioSistema;
+use App\Notifications\SolicitudAprobadaNotification;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -80,6 +81,8 @@ class AprobarYCompletarSolicitudAction
                 ->performedOn($solicitud)
                 ->withProperties(['taller_id' => $taller->id])
                 ->log('aprobar_completar_solicitud_taller');
+
+            SolicitudAprobadaNotification::enviar($solicitud, $actor);
 
             return $solicitud;
         });

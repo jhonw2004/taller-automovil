@@ -6,6 +6,7 @@ use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
 use App\Models\UsuarioSistema;
+use App\Notifications\SolicitudAprobadaNotification;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -45,6 +46,8 @@ class AprobarSinCompletarSolicitudAction
             ]);
 
             activity()->causedBy($actor)->performedOn($solicitud)->log('aprobar_sin_completar_solicitud_taller');
+
+            SolicitudAprobadaNotification::enviar($solicitud, $actor);
 
             return $solicitud;
         });

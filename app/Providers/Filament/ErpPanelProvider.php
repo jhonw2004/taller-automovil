@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Auth\Pages\Login;
 use App\Filament\Erp\Widgets\TenantSwitcher;
 use App\Http\Middleware\CheckSessionExpiration;
 use App\Http\Middleware\ForzarCambioPasswordMiddleware;
@@ -13,6 +14,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -20,6 +22,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class ErpPanelProvider extends PanelProvider
@@ -30,7 +33,14 @@ class ErpPanelProvider extends PanelProvider
             ->id('erp')
             ->path('erp')
             ->viteTheme('resources/css/filament/erp/theme.css')
-            ->login(\App\Filament\Auth\Pages\Login::class)
+            // 014-notificaciones: campana del topbar (App\Livewire\NotificacionesBell, registrada
+            // en AppServiceProvider). Mismo patrón que la documentación oficial de Filament v5
+            // para integrar un componente Livewire de terceros vía render hook.
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_END,
+                fn (): string => Blade::render('@livewire(\'notificaciones-bell\')'),
+            )
+            ->login(Login::class)
             ->authGuard('sistema')
             ->font('DM Sans')
             // Paleta Awesomic — misma paleta que AdminPanelProvider, ver notas ahí.

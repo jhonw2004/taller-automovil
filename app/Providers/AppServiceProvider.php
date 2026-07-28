@@ -3,9 +3,12 @@
 namespace App\Providers;
 
 use App\Auth\UsuarioSistemaProvider;
+use App\Livewire\NotificacionesBell;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,5 +34,23 @@ class AppServiceProvider extends ServiceProvider
         // con `RouteNotFoundException` en vez de un redirect limpio (006-resenas-favoritos,
         // primera ruta GET del marketplace protegida con `auth:web`: `/dashboard`).
         Authenticate::redirectUsing(fn () => route('home'));
+
+        // Segundo bug real, mismo síntoma, encontrado en 014: `Illuminate\Auth\Middleware\Authenticate`
+        // y `Illuminate\Auth\AuthenticationException` tienen CADA UNA su propio `redirectUsing()`
+        // estático. El de arriba solo cubre el caso `!$request->expectsJson()` (páginas normales,
+        // como `/dashboard`) — el middleware pasa `null` explícito cuando la request SÍ espera JSON
+        // (cualquier fetch() con `Accept: application/json`, como el endpoint de
+        // `/notificaciones/{id}/marcar-leida`), y `bootstrap/app.php` limita `shouldRenderJsonWhen`
+        // a rutas `api/*`, así que ese `null` cae en el fallback de la EXCEPCIÓN, no del middleware,
+        // que sin este segundo override intenta `route('login')` (inexistente) igual. Sin esto,
+        // cualquier fetch() no autenticado a una ruta fuera de `/api/*` explota con 500 en vez de
+        // un 401 limpio.
+        AuthenticationException::redirectUsing(fn () => route('home'));
+
+        // 014-notificaciones: campana del topbar, montada vía renderHook(TOPBAR_END) en ambos
+        // PanelProvider (admin/erp). Se registra por nombre (no por FQCN directo en `@livewire`)
+        // siguiendo el mismo patrón documentado por Filament para integrar Livewire de terceros
+        // en un render hook.
+        Livewire::component('notificaciones-bell', NotificacionesBell::class);
     }
 }

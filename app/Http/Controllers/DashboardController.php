@@ -19,9 +19,12 @@ class DashboardController extends Controller
         $favoritos = $usuario->favoritos()->with('taller.categorias')->latest()->get();
         $resenas = $usuario->resenas()->with('taller')->latest()->get();
 
+        $notificaciones = $usuario->notificaciones()->noLeidas()->latest()->get();
+
         return view('marketplace.dashboard.index', [
             'favoritos' => $favoritos,
             'resenas' => $resenas,
+            'notificaciones' => $notificaciones,
         ]);
     }
 }

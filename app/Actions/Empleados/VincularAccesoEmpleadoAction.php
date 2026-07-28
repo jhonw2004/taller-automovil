@@ -8,6 +8,7 @@ use App\Exceptions\BusinessException;
 use App\Models\Empleado;
 use App\Models\Rol;
 use App\Models\UsuarioSistema;
+use App\Notifications\UsuarioCreadoNotification;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -56,6 +57,8 @@ class VincularAccesoEmpleadoAction
                 ->performedOn($empleado)
                 ->withProperties(['usuario_sistema_id' => $resultado['usuario']->id, 'rol_id' => $rol->id])
                 ->log('acceso_otorgado_empleado');
+
+            UsuarioCreadoNotification::enviar($resultado['usuario'], $empleado->taller);
 
             return [
                 'usuario' => $resultado['usuario'],

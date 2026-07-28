@@ -6,6 +6,7 @@ use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
 use App\Models\UsuarioSistema;
+use App\Notifications\SolicitudRechazadaNotification;
 use Illuminate\Support\Facades\DB;
 
 class RechazarSolicitudAction
@@ -46,6 +47,8 @@ class RechazarSolicitudAction
             ]);
 
             activity()->causedBy($actor)->performedOn($solicitud)->log('rechazar_solicitud_taller');
+
+            SolicitudRechazadaNotification::enviar($solicitud, $actor);
 
             return $solicitud;
         });

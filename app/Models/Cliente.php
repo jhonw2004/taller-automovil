@@ -50,6 +50,20 @@ class Cliente extends Model
         );
     }
 
+    /**
+     * Nombre para mostrar (razón social si es jurídica, nombre+apellido si es natural) — hasta
+     * ahora duplicado como método privado en `VehiculoResource`/`OrdenTrabajoResource`/
+     * `NotaVentaResource`; queda acá como accessor para que `NotaEmitidaNotification` (014) no lo
+     * duplique una cuarta vez. Los Resources existentes no se tocan en esta sesión (fuera de
+     * alcance de 014).
+     */
+    protected function nombreCompleto(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->tipo_persona === 'JURIDICA' ? $this->razon_social : trim("{$this->nombre} {$this->apellido}"),
+        );
+    }
+
     public function vehiculos(): HasMany
     {
         return $this->hasMany(Vehiculo::class);

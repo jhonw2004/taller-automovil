@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\SolicitudTallerController;
 use App\Http\Controllers\TallerBusquedaController;
 use App\Http\Controllers\TallerPerfilController;
@@ -55,3 +56,13 @@ Route::middleware('auth:web')->group(function () {
 */
 
 Route::middleware('auth:web')->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Notificaciones (014, guards `web` y `sistema` — ver NotificacionController)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:web,sistema')
+    ->post('/notificaciones/{notificacion}/marcar-leida', [NotificacionController::class, 'marcarLeida'])
+    ->name('notificaciones.marcar-leida');

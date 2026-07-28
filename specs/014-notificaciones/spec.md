@@ -1,6 +1,6 @@
 ---
 id: 014-notificaciones
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 010-inventario-repuestos, 011-ordenes-trabajo, 012-notas-venta]
 resumen: "Notificaciones in-app dirigidas a un único destinatario (marketplace o sistema), disparadas por eventos del negocio."
 ---
