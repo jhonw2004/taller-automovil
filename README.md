@@ -14,7 +14,7 @@ Marketplace público + mini-ERP multi-tenant para talleres mecánicos en Santa C
 
 ```bash
 # Clonar el repositorio
-git clone <repo-url>
+git clone https://github.com/jhonw2004/taller-automovil.git
 cd taller-automoviles
 
 # Instalar dependencias PHP

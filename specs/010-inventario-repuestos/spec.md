@@ -1,6 +1,6 @@
 ---
 id: 010-inventario-repuestos
-status: draft
+status: implemented
 depends_on: [003-gestion-talleres]
 resumen: "Repuestos, proveedores y movimientos de inventario append-only con stock nunca negativo, actualizado transaccionalmente."
 ---
