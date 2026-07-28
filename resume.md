@@ -1,6 +1,6 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-28 (vigésima sesión: commit + push de auditoría de consistencia y limpieza, 568/568 tests verdes, todo commiteado y pusheado). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-28 (vigesimoprimera sesión: botón Registrarse con Google en nav + fix SSL, 568/568 tests verdes, todo commiteado y pusheado). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
 
 ## Qué se hizo el 2026-07-28 (decimonovena sesión): auditoría de consistencia de todo el proyecto + limpieza (568/568 tests verdes)
 
@@ -35,6 +35,19 @@ Con las 17 features ya `implemented` (sesión anterior), el usuario pidió un an
 Commit y push del código de la decimonovena sesión (auditoría de consistencia de todo el proyecto + correcciones). No se modificó ningún archivo de código adicional — solo `resume.md` actualizado y commit/push.
 
 **Cambios incluidos**: FK real de `orden_trabajo_id` en `resenas`, conteo de entidades hijas activas antes de soft-delete de taller, `UnidadMedidaSeeder`/`CategoriaSeeder`, factories faltantes, `SequentialCodeGenerator`/`TenantSwitcher` tests, desactivación por taller en `ActivarDesactivarUsuarioSistemaAction`, y corrección de `tasks.md`/specs en todas las features.
+
+## Qué se hizo el 2026-07-28 (vigesimoprimera sesión): botón Registrarse con Google en nav + fix SSL
+
+El usuario pidió un botón "Registrarse" en el encabezado del marketplace (junto al botón "Iniciar sesión" existente), que use Google OAuth2.0.
+
+**Frontend:**
+- `resources/views/components/marketplace/nav.blade.php`: agregado `<x-button variant="ghost">Registrarse</x-button>` junto al botón "Iniciar sesión". Ambos enlazan a `route('auth.google.redirect')` — la Action `LoginOrRegisterMarketplaceUserAction` maneja idempotentemente ambos casos (crea cuenta si no existe, inicia sesión si ya existe). Se quitó el botón que se había agregado previamente en `home.blade.php` (el usuario prefirió el nav).
+
+**Infraestructura (SSL):**
+- Error `cURL error 60: unable to get local issuer certificate` al contactar `www.googleapis.com/oauth2/v4/token` durante el OAuth — el entorno Windows no tenía el bundle de certificados CA.
+- Solución: descargado `cacert.pem` desde `https://curl.se/ca/cacert.pem` en `C:\Program Files\php\extras\ssl\cacert.pem` y configurado `curl.cainfo`/`openssl.cafile` en `php.ini`. Sin cambios en el código del proyecto.
+
+**568/568 tests verdes**, todo commiteado y pusheado en `aa05f29`.
 
 ## Qué se hizo el 2026-07-28 (decimoctava sesión): commit + push de 015-auditoria — todas las features del plan implementadas
 
@@ -636,7 +649,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **Auditoría de consistencia** (decimonovena sesión, commiteado y pusheado en `55047a5` en la vigésima sesión): FK real de `orden_trabajo_id` en `resenas`, `Taller::contarEntidadesHijasActivas()` con primer consumidor real de `BelongsToTaller::sinScope()`, `UnidadMedidaSeeder`/`CategoriaSeeder` (lo que faltaba del seeding de `017`), 6 factories faltantes, tests de `SequentialCodeGenerator`/`TenantSwitcher`, desactivación por taller en `ActivarDesactivarUsuarioSistemaAction` (en vez de global), corrección de `tasks.md`/specs en todas las features. 16 tests nuevos.
 - **Total: 568/568 tests Pest verdes** (552 previos + 16 de la auditoría de consistencia), `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código de las 17 features más la auditoría de consistencia está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab` → `2020912` → `55047a5`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código de las 17 features más la auditoría de consistencia está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab` → `2020912` → `55047a5` → `aa05f29`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -698,6 +711,7 @@ El proyecto Laravel ya no es un esqueleto:
 20. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para las 17 features (001-017)**.
 21. ~~Auditoría de consistencia de todo el proyecto + corrección de brechas documentales y de código~~ **Hecho** (decimonovena sesión: FK de reseña, conteo hijas activas, seeders, factories, tests faltantes, desactivación por taller, corrección de `tasks.md`/specs en todas las features, 568/568 tests).
 22. ~~Commit + push de la auditoría de consistencia~~ **Hecho** (vigésima sesión, commit `55047a5` en `origin/specs/planificacion`).
+23. ~~Botón Registrarse con Google en nav + fix SSL~~ **Hecho** (vigesimoprimera sesión, commit `aa05f29`).
 
 **MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs están en `status: implemented` con 568/568 tests verdes y todo commiteado/pusheado en `origin/specs/planificacion`.
 
