@@ -29,7 +29,7 @@ Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `010-inventario-repu
 - **Interacción real con nota de venta al anular** (bloqueo si `PENDIENTE`/`PAGADA`, auto-anulación si `EMITIDA`): no se puede implementar todavía porque `012-notas-venta` no existe. Extensamente documentado en `AnularOrdenTrabajoAction`.
 - **Kanban con drag-and-drop**: se implementó como lista con pestañas por estado (ver arriba). Si el usuario pide explícitamente una interacción de arrastrar, sería una feature de UI adicional, no un criterio de aceptación de `011-spec.md`.
 - Verificación visual en navegador real: no se hizo (ver arriba).
-- **Código de `011` commiteado y pusheado en `{HASH}` en `origin/specs/planificacion`.**
+- **Código de `011` commiteado y pusheado en `dbe231e` en `origin/specs/planificacion`.**
 
 ## Qué se hizo el 2026-07-27 (duodécima sesión): 010-inventario-repuestos completo (343/343 tests verdes)
 
@@ -474,7 +474,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **011-ordenes-trabajo** (decimotercera sesión): completo — backend (`ordenes_trabajo` + 2 tablas de líneas + historial + notas, máquina de estados de orden y de línea, `recalcularTotales()` transaccional, 7 Actions en `app/Actions/Ordenes/`, integración real con `010` vía `RegistrarMovimientoInventarioAction` para descuento/reposición de stock por línea de repuesto, FK real agregada a `inventario_movimientos.orden_trabajo_repuesto_id` que `010` había dejado pendiente) y Filament (`OrdenTrabajoResource` con creación vía Action, cambio de estado/anulación como acciones de cabecera dedicadas, 4 `RelationManagers` como pestañas, lista con tabs por estado en vez de Kanban — decisión documentada). Brecha a propósito: interacción con nota de venta al anular, porque `012` no existe. 67 tests nuevos, incluyendo los primeros tests Livewire directos sobre `RelationManagers` del proyecto.
 - **Total: 410/410 tests Pest verdes** (343 previos + 67 de `011`), `laravel/pint --dirty` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `011-ordenes-trabajo` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `{HASH}`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `011-ordenes-trabajo` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -528,7 +528,7 @@ El proyecto Laravel ya no es un esqueleto:
 12. ~~Hotfix CheckSessionExpiration (string → Carbon::parse)~~ **Hecho** (`a126403`).
 13. ~~Implementar `009-catalogo-servicios`~~ **Hecho** (undécima sesión, commiteado y pusheado en `76a1e7a`). Además se reemplazó el README.md default de Laravel por uno propio del proyecto (instalación, configuración, paneles, tests).
 14. ~~Implementar `010-inventario-repuestos`~~ **Hecho** (duodécima sesión, 2026-07-27, commiteado y pusheado en `b7e59be`).
-15. ~~Implementar `011-ordenes-trabajo`~~ **Hecho** (decimotercera sesión, 2026-07-28, commiteado y pusheado en `{HASH}`).
+15. ~~Implementar `011-ordenes-trabajo`~~ **Hecho** (decimotercera sesión, 2026-07-28, commiteado y pusheado en `dbe231e`).
 16. Seguir en orden de dependencia: `012-notas-venta` → `013`…`015`. Cuando se implemente `012`, completar la brecha documentada en `AnularOrdenTrabajoAction` (bloqueo/auto-anulación de nota de venta).
 17. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008, 009, 010 y 011**.
 
