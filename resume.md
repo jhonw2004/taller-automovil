@@ -561,7 +561,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **014-notificaciones** (decimosexta sesión): completo — tabla `notificaciones` (destinatario mutuamente excluyente `usuario_marketplace_id`/`usuario_sistema_id`), `Notificacion` + `CrearNotificacionAction`/`MarcarNotificacionLeidaAction`, 10 clases en `app/Notifications/` conectadas a sus 6 features origen (listeners nuevos sobre 3 eventos ya existentes de `006`/`010`/`013`, primer uso de Observers del proyecto para `orden.*`/`nota.emitida`, llamada directa en las Actions de `solicitud.*`/`usuario.creado`, comando programado diario para `password.expirada`), endpoint `POST /notificaciones/{id}/marcar-leida` (guard `web,sistema` combinado), campana Livewire en el topbar de `/admin`+`/erp` vía `renderHook`, sección en el dashboard marketplace. 2 bugs reales de manejo de excepciones JSON/redirect corregidos (`AuthenticationException::redirectUsing()` + `shouldRenderJsonWhen` ampliado en `bootstrap/app.php`). 40 tests nuevos.
 - **Total: 521/521 tests Pest verdes** (481 previos + 40 de `014`), `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `014-notificaciones` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `{HASH}`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `014-notificaciones` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -618,7 +618,7 @@ El proyecto Laravel ya no es un esqueleto:
 15. ~~Implementar `011-ordenes-trabajo`~~ **Hecho** (decimotercera sesión, 2026-07-28, commiteado y pusheado en `dbe231e`).
 16. ~~Implementar `012-notas-venta`~~ **Hecho** (decimocuarta sesión, 2026-07-28, commiteado y pusheado en `d5d8f14`). Brecha de integración con `011` resuelta.
 17. ~~Implementar `013-pagos`~~ **Hecho** (decimoquinta sesión, 2026-07-28, commiteado y pusheado en `e4d14fa`).
-18. ~~Implementar `014-notificaciones`~~ **Hecho** (decimosexta sesión, 2026-07-28, commiteado y pusheado en `{HASH}`). Sigue `015-auditoria`, última feature del orden de `AGENTS.md`.
+18. ~~Implementar `014-notificaciones`~~ **Hecho** (decimosexta sesión, 2026-07-28, commiteado y pusheado en `d83b268`). Sigue `015-auditoria`, última feature del orden de `AGENTS.md`.
 19. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008, 009, 010, 011, 012, 013 y 014**.
 
 ## Cómo navegar si eres un agente retomando esto
