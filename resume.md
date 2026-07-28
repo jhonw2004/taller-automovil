@@ -1,6 +1,14 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-28 (decimoséptima sesión: 015-auditoria completado, **última feature del orden de `AGENTS.md`** — 552/552 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-28 (decimoctava sesión: commit + push de 015-auditoria, MVP completo, 552/552 tests verdes — no quedan features pendientes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-28 (decimoctava sesión): commit + push de 015-auditoria — todas las features del plan implementadas
+
+En esta sesión se tomó el código ya implementado de `015-auditoria` que estaba en el working tree (decimoséptima sesión, código sin commitear), se verificó el estado, se commitó como `27e6fab` y se pusheó a `origin/specs/planificacion`. No se modificó ningún archivo de código — solo commit + push.
+
+**Estado final del proyecto**: las 17 features (001-017) están 100% implementadas, con `status: implemented` en sus respectivos `spec.md`, 552/552 tests verdes, `laravel/pint --dirty` sin pendientes, y todo commiteado/pusheado en `origin/specs/planificacion`.
+
+Para referencia, el contenido completo de la implementación de `015-auditoria` está documentado abajo en la sección de la decimoséptima sesión.
 
 ## Qué se hizo el 2026-07-28 (decimoséptima sesión): 015-auditoria completo (552/552 tests verdes) — MVP completo según el orden de AGENTS.md
 
@@ -569,12 +577,12 @@ Cada carpeta de feature tiene:
 - `plan.md` — CÓMO (tablas, columnas, constraints, modelos Eloquent, Actions, paquetes, Filament Resources).
 - `tasks.md` — checklist de tareas atómicas y verificables derivadas del plan.
 
-Las 17 features están numeradas por orden de dependencia (`depends_on` en el frontmatter). **Todas están en `status: draft`** — nada de esto está implementado todavía en código (ver más abajo).
+Las 17 features están numeradas por orden de dependencia (`depends_on` en el frontmatter). **Todas están en `status: implemented`** — el código completo de todas las features está implementado y probado.
 
 ## Estado real del código
 
 El proyecto Laravel ya no es un esqueleto:
-- **Stack instalado**: Filament v5.7.3, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/laravel-activitylog 5.0, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton. **`spatie/laravel-permission` fue instalado y luego removido** (ver sesión 2026-07-26 tercera) — roles/permisos son 100% custom, no depende de ese paquete.
+- **Stack instalado**: Filament v5.7.3, laravel/socialite 5.29, spatie/laravel-sluggable 4.0.2, spatie/simple-excel 3.10, guzzlehttp/guzzle 7, laravel/breeze 2.4, barryvdh/laravel-debugbar 4.4 (dev). Pest v4 viene con el skeleton. **`spatie/laravel-permission` fue instalado y luego removido** (ver sesión 2026-07-26 tercera) — roles/permisos son 100% custom. **`spatie/laravel-activitylog` fue instalado y luego removido** (ver decimoséptima sesión) — auditoría es 100% tablas propias append-only.
 - **017-infraestructura-sistema**: migración PostGIS ejecutada, timezone configurado, `BelongsToTaller` trait + scope, `HasGeolocation` trait + `GeometryCast`, `SequentialCodeGenerator`. Seeding de permisos/roles/Super Admin hecho. **`SetTallerActivo` + `ForzarCambioPasswordMiddleware` + paneles Filament personalizados (paleta Awesomic) — hecho en la quinta sesión.** Pendiente: rutas API/web (bloqueadas por `005`/`006`), CSS/tema Tailwind completo (junto con `016`+`005`).
 - **001-identidad-autenticacion**: backend (6 migraciones + modelos, OAuth Google, guards `web`/`sistema`, provider custom, bloqueo por 5 intentos, expiración de sesión 30 min, historial de 5 contraseñas) + **UI de cambio de contraseña obligatorio (quinta sesión)**. 26 tests de backend + cubierto por los tests de middleware de la quinta sesión.
 - **002-roles-permisos**: backend (4 migraciones + modelos `Rol`/`Permiso`/`AsignacionRol`, `AsignarRolAction`, `tienePermiso()`/`esSuperAdmin()`/`canAccessPanel()`, catálogo de 64 permisos + 9 roles de sistema seedeados) + **UI (quinta sesión): `PermisoResource`, `RolResource` (admin+erp), `AsignacionRolResource`**. 21 tests de backend + 12 tests de autorización/render de Resources.
@@ -590,9 +598,10 @@ El proyecto Laravel ya no es un esqueleto:
 - **012-notas-venta** (decimocuarta sesión): completo — backend (`notas_venta`/`notas_venta_lineas`, máquina de estados, 3 Actions `CrearNotaVentaDesdeOrdenAction`/`CrearNotaVentaDirectaAction`/`AnularNotaVentaAction`, descuento de stock en creación directa vía `010`, bloqueo de anulación si `monto_pagado > 0`) y Filament (`NotaVentaResource` con selector origen orden/directa, `Repeater` condicional, solo lectura en edición + acción anular). Hallazgo Filament v5 corregido: `->visible()` no excluye de validación. Integración real con `011`: `AnularOrdenTrabajoAction` bloquea/auto-anula notas de venta según estado. 48 tests nuevos + 6 tests extendidos de `011`. ~~Brecha a propósito: transiciones a `PENDIENTE`/`PAGADA` dependen de `013-pagos`.~~ **Resuelto en la decimoquinta sesión.**
 - **013-pagos** (decimoquinta sesión): completo — backend (`metodos_pago`/`pagos`, sin `taller_id` propio en `pagos` — aislamiento vía `nota_venta_id`, sin soft delete — se anula cambiando `estado` —, `MetodoPagoSeeder` con los 4 métodos base), `NotaVenta::recalcularTotales()` (de `012`) extendido para sumar pagos `CONFIRMADO` y derivar `estado` (`PAGADA`/`PENDIENTE`/`EMITIDA`), 2 Actions `RegistrarPagoAction`/`AnularPagoAction` (`lockForUpdate` sobre la nota, `AnularPagoAction` auditada vía `activity()`) y Filament (`PagosRelationManager` en `NotaVentaResource`: modal "Registrar Pago" con `maxValue()`=saldo, acción "Anular pago", gateado explícitamente por `pagos.registrar`/`pagos.anular`). Decisión deliberada: sin `MetodoPagoResource` (el seeder ya deja datos usables, a diferencia de `UnidadMedidaResource` en `010`). 22 tests nuevos + 1 test de `012` actualizado (`NotaVentaTest.php`, ahora usa un `Pago` real en vez de fijar `monto_pagado` a mano).
 - **014-notificaciones** (decimosexta sesión): completo — tabla `notificaciones` (destinatario mutuamente excluyente `usuario_marketplace_id`/`usuario_sistema_id`), `Notificacion` + `CrearNotificacionAction`/`MarcarNotificacionLeidaAction`, 10 clases en `app/Notifications/` conectadas a sus 6 features origen (listeners nuevos sobre 3 eventos ya existentes de `006`/`010`/`013`, primer uso de Observers del proyecto para `orden.*`/`nota.emitida`, llamada directa en las Actions de `solicitud.*`/`usuario.creado`, comando programado diario para `password.expirada`), endpoint `POST /notificaciones/{id}/marcar-leida` (guard `web,sistema` combinado), campana Livewire en el topbar de `/admin`+`/erp` vía `renderHook`, sección en el dashboard marketplace. 2 bugs reales de manejo de excepciones JSON/redirect corregidos (`AuthenticationException::redirectUsing()` + `shouldRenderJsonWhen` ampliado en `bootstrap/app.php`). 40 tests nuevos.
-- **Total: 521/521 tests Pest verdes** (481 previos + 40 de `014`), `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
+- **015-auditoria** (decimoséptima sesión, commiteado y pusheado en `27e6fab` en la decimoctava sesión): completo — **reemplazo total de `spatie/laravel-activitylog`** por tablas propias append-only. 3 migraciones (`auditoria_eventos`, `auditoria_accesos`, `auditoria_talleres`) + migración de drop de `activity_log`. Modelos append-only que bloquean `update()`/`delete()` vía `BusinessException`. 2 Actions centralizadas (`RegistrarEventoAuditoriaAction`/`RegistrarAccesoAuditoriaAction`). `TallerObserver` (cambios sensibles con pares old/new, dispara solo si `wasChanged()`). `RegistrarAccesoListener` (multi-handle sobre eventos nativos `Login`/`Logout`/`Failed`, ambos guards). `AuditarAccesoDenegadoFilament` middleware (reemplaza `Filament\Http\Middleware\Authenticate` en ambos paneles). 6 Resources Filament de solo lectura (`/erp` + `/admin`, cada uno filtra por taller activo o no). 12 Actions de 8 features anteriores migradas de `activity()` a la tabla propia. 3 gaps de auditoría cerrados (`AnularOrdenTrabajoAction`, `AsignarRolAction`, `RegistrarMovimientoInventarioAction` ajustes). Bug corregido en `BelongsToTaller::sinScope()` (guard incorrecto). 31 tests nuevos.
+- **Total: 552/552 tests Pest verdes** (521 previos + 31 de `015`), `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `014-notificaciones` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código de las 17 features está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -649,8 +658,11 @@ El proyecto Laravel ya no es un esqueleto:
 15. ~~Implementar `011-ordenes-trabajo`~~ **Hecho** (decimotercera sesión, 2026-07-28, commiteado y pusheado en `dbe231e`).
 16. ~~Implementar `012-notas-venta`~~ **Hecho** (decimocuarta sesión, 2026-07-28, commiteado y pusheado en `d5d8f14`). Brecha de integración con `011` resuelta.
 17. ~~Implementar `013-pagos`~~ **Hecho** (decimoquinta sesión, 2026-07-28, commiteado y pusheado en `e4d14fa`).
-18. ~~Implementar `014-notificaciones`~~ **Hecho** (decimosexta sesión, 2026-07-28, commiteado y pusheado en `d83b268`). Sigue `015-auditoria`, última feature del orden de `AGENTS.md`.
-19. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008, 009, 010, 011, 012, 013 y 014**.
+18. ~~Implementar `014-notificaciones`~~ **Hecho** (decimosexta sesión, 2026-07-28, commiteado y pusheado en `d83b268`).
+19. ~~Implementar `015-auditoria`~~ **Hecho** (decimoséptima sesión, código implementado; decimoctava sesión, commiteado y pusheado en `27e6fab`). Última feature del orden de `AGENTS.md`.
+20. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para las 17 features (001-017)**.
+
+**MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs están en `status: implemented` con 552/552 tests verdes y todo commiteado/pusheado en `origin/specs/planificacion`.
 
 ## Cómo navegar si eres un agente retomando esto
 
