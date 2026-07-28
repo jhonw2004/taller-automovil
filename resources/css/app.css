@@ -101,3 +101,45 @@
 .badge-accent {
     @apply border-ember text-white bg-ember;
 }
+
+/**
+ * Scroll-reveal (018-modernizacion-ui): fade + slide-up de una sola vez al entrar en viewport,
+ * activado por `resources/js/reveal.js` (IntersectionObserver, agrega `.is-visible` y deja de observar).
+ * Nunca bloquea contenido si JS falla: sin `.reveal`, o si el observer no corre, el elemento ya es
+ * visible por defecto (ver `.reveal` sin `.is-visible` justo abajo no lo oculta permanentemente,
+ * `reveal.js` marca todo como visible de entrada en fallback). `prefers-reduced-motion` desactiva
+ * la transición y muestra el contenido de inmediato.
+ */
+.reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal.is-visible {
+    opacity: 1;
+    transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+@keyframes float-slow {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-16px);
+    }
+}
+.animate-float-slow {
+    animation: float-slow 7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-float-slow {
+        animation: none;
+    }
+}

@@ -1,6 +1,45 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-28 (vigesimocuarta sesión: `business.md`, commit+push del logo/rebranding, `018-modernizacion-ui` y Home rediseñado, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-28 (vigesimosexta sesión: commit+push de la vigesimoquinta sesión, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-28 (vigesimosexta sesión): commit+push de la vigesimoquinta sesión (568/568 tests verdes)
+
+Commit y push del código de la vigesimoquinta sesión (Home con 2 secciones nuevas + animación scroll-reveal, footer rediseñado en columnas, formulario de solicitud de taller migrado al design system). No se modificó ningún archivo de código adicional — solo `resume.md` actualizado y commit/push.
+
+**Cambios incluidos**: 2 secciones nuevas en el Home ("Habla con nuestro equipo" con FAQ), animación scroll-reveal con `IntersectionObserver` (reveal.js), footer rediseñado a grid de columnas con padding correcto, migración del formulario de solicitud de taller de layout legado a `marketplace.layouts.app` con componentes del design system, eliminación de `layouts/marketplace.blade.php` (sin consumidores).
+
+### Qué queda pendiente
+
+- Resto de `018-modernizacion-ui` sigue pendiente: `search/index.blade.php`, `workshops/show.blade.php`, `dashboard/index.blade.php`, `nav.blade.php` (incluye el bug de padding invertido, todavía sin corregir ahí), tema Filament ERP/Admin, refinamiento visual de `<x-input>`/`<x-select>`/`<x-button>`/`<x-card>`.
+- Verificación visual en navegador real: no se hizo (mismo motivo estructural de siempre).
+
+## Qué se hizo el 2026-07-28 (vigesimoquinta sesión): ampliación de `018-modernizacion-ui` — más secciones en Home, footer en columnas, animación sutil, migración del formulario de solicitud (568/568 tests verdes)
+
+El usuario pidió continuar con `018-modernizacion-ui` sumando: más secciones al Home (incluyendo cómo contactar al equipo para cotizaciones), mejorar la apariencia del footer, agregar animaciones que hagan el Home más vistoso, y mejorar la UI de componentes/formularios como el de registro de taller. Antes de escribir código se preguntó al usuario qué datos de contacto usar para la sección de cotización (no existe ningún email/teléfono/WhatsApp real del negocio en el código, solo el placeholder `hello@example.com` de `.env.example`) — el usuario eligió **no inventar contacto**: la sección persuade y su único CTA es `route('solicitudes.create')`, el mecanismo de contacto real que ya existe.
+
+**Spec `018-modernizacion-ui` actualizada** (sigue en `status: draft`, alcance ampliado con nota explícita de que la exclusión original de animaciones — heredada de `016` — fue revisada 2026-07-28 por pedido directo del usuario): `spec.md`/`plan.md`/`tasks.md` documentan las 2 secciones nuevas del Home, el rediseño del footer, la infraestructura de animación y el hallazgo del layout legado (ver abajo).
+
+**Home (`home.blade.php`) — 2 secciones nuevas** entre "Para dueños de taller" y el CTA final:
+1. **"Habla con nuestro equipo"** (cotización): 3 pasos estáticos (Cuéntanos de tu taller → Lo revisamos → Te contactamos) + único CTA a `route('solicitudes.create')`, sin datos de contacto inventados.
+2. **Preguntas frecuentes**: 4 preguntas con `<details>/<summary>` nativo (sin JS, funciona con JS deshabilitado), respuestas basadas en comportamiento real ya implementado (búsqueda pública, flujo de solicitud con seguimiento por token, contenido del ERP) — se evitó deliberadamente cualquier pregunta sobre precios, ya que no hay ningún dato de pricing verificable en el proyecto.
+
+**Animación sutil (nueva infraestructura, reutilizable en todo el marketplace, no solo Home)**:
+- `resources/js/reveal.js`: `IntersectionObserver` que agrega `.is-visible` a cualquier elemento `.reveal` la primera vez que entra en viewport y deja de observarlo (animación de una sola vez). Fallback sin `IntersectionObserver`: marca todo visible de inmediato. Registrado en `resources/js/app.js` (`DOMContentLoaded` → `initScrollReveal()`).
+- `resources/css/app.css`: clases `.reveal`/`.reveal.is-visible` (fade + slide-up, 600ms) y `.animate-float-slow` (flotación lenta aplicada al blob decorativo del hero), ambas anuladas bajo `@media (prefers-reduced-motion: reduce)`.
+- Hover-lift (`hover:-translate-y-*` + `hover:shadow-md`, `transition duration-300`) en tarjetas de "Cómo funciona", categorías, beneficios y pasos de cotización.
+- Como `reveal.js` se registra globalmente en `app.js`, cualquier vista futura que agregue la clase `.reveal` a un elemento obtiene la animación gratis, sin JS adicional.
+
+**Footer (`components/marketplace/footer.blade.php`) rediseñado**: de una fila simple (logo + enlaces en línea) a grid de columnas (marca + descripción, enlaces "Marketplace", enlaces "Para tu taller"), `grid-cols-1` en móvil → `sm:grid-cols-2 lg:grid-cols-4`. Aprovechado para corregir, en este archivo, el bug de padding invertido (`px-16 ... sm:px-4`) que sesiones anteriores habían documentado como pendiente — ahora usa progresión mobile-first correcta. **`nav.blade.php` sigue con el mismo bug sin corregir** (fuera de alcance de esta sesión, que solo tocó el footer; queda en `tasks.md` para el bloque "resto de vistas").
+
+**Hallazgo real y corrección — formulario de registro de taller usaba un layout legado**: `resources/views/solicitudes/{crear,seguimiento}.blade.php` no usaban `marketplace.layouts.app` sino `resources/views/layouts/marketplace.blade.php`, un layout más antiguo sin nav, sin footer, sin `resources/js/app.js` y con clases Tailwind `zinc-*` crudas en vez de los tokens de `016` — la causa real de que el formulario se viera "genérico", tal como señaló el usuario. Ambas vistas se migraron a `marketplace.layouts.app` + `<x-card>`/`<x-input>`/`<x-select>`/`<x-button>`/`<x-alert>`/`<x-badge>`, preservando exactamente los mismos `id`/`name` de campos (el JS del stepper de `crear.blade.php` depende de `getElementById`, verificado que sigue funcionando) y las mismas rutas de `action`/`route()`. El layout legado `layouts/marketplace.blade.php` quedó sin ningún consumidor tras la migración — se eliminó (confirmado con grep antes de borrar). Los estados de validación del stepper (borde rojo en campos vacíos) y los colores activos de los pasos del stepper se actualizaron de `zinc-900`/`red-400` a los tokens `obsidian`/`ember`/`cloud` del design system.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes. **568/568 tests verdes** (incluye `SolicitudPublicaTest.php`, que no hace ninguna aserción de texto/estructura sobre `crear.blade.php` más allá de los nombres de campo, así que la migración de layout no rompió nada). `npm run build` sin errores. Smoke test con `php artisan serve` + `Invoke-WebRequest`: `/` → 200 con las 2 secciones nuevas y la clase `reveal` presentes; `/solicitudes-taller/nueva` (ruta real de `solicitudes.create`, prefijo `solicitudes-taller`, no `/solicitudes/crear`) → 200, con el nav del marketplace visible (antes ausente) y el `id="solicitante_nombre"` esperado por el JS del stepper. Verificación visual en navegador real no se hizo (`claude-in-chrome` no disponible, mismo motivo estructural de todas las sesiones anteriores).
+
+### Qué queda pendiente tras esta sesión
+
+- ~~**Nada commiteado todavía**: todos los cambios de esta sesión (Home, footer, `solicitudes/crear.blade.php`, `solicitudes/seguimiento.blade.php`, borrado de `layouts/marketplace.blade.php`, `reveal.js`, `app.css`, `app.js`, specs) están en el working tree, sin `git add`/`commit`/`push`.~~ **Resuelto en la vigesimosexta sesión (commit).**
+- Resto de `018-modernizacion-ui` sigue pendiente: `search/index.blade.php`, `workshops/show.blade.php`, `dashboard/index.blade.php`, `nav.blade.php` (incluye el bug de padding invertido, todavía sin corregir ahí), tema Filament ERP/Admin, refinamiento visual de `<x-input>`/`<x-select>`/`<x-button>`/`<x-card>` (sus `@props` no cambiaron esta sesión, solo se usaron más ampliamente).
+- Verificación visual en navegador real: no se hizo (ver arriba).
 
 ## Qué se hizo el 2026-07-28 (vigesimotercera sesión): spec `018-modernizacion-ui` + rediseño del Home (568/568 tests verdes)
 
@@ -790,6 +829,7 @@ El proyecto Laravel ya no es un esqueleto:
 24. ~~Logo + rebranding a "TallerPro"~~ **Hecho** (vigesimosegunda sesión, código implementado).
 25. ~~Spec `018-modernizacion-ui` + rediseño del Home~~ **Hecho** (vigesimotercera sesión, código implementado).
 26. ~~`business.md` con lógica de negocio y estructura de vistas~~ **Hecho** (vigesimocuarta sesión).
+27. ~~Ampliación de `018-modernizacion-ui`: 2 secciones Home, animación scroll-reveal, footer columnas, migración formulario solicitud~~ **Hecho** (vigesimoquinta sesión, código implementado).
 
 **MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs están en `status: implemented` con 568/568 tests verdes y todo commiteado/pusheado en `origin/specs/planificacion`.
 

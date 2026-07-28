@@ -1,152 +1,110 @@
-@extends('layouts.marketplace')
+@extends('marketplace.layouts.app')
 
-@section('title', 'Registra tu taller - Talleres Automotrices')
+@section('title', 'Registra tu taller')
 
 @section('content')
-    <h1 class="text-2xl font-semibold tracking-tight">Registra tu taller</h1>
-    <p class="mt-1 text-sm text-zinc-600">
-        No necesitas crear una cuenta. Completa el formulario y un administrador revisará tu solicitud.
-    </p>
+    <div class="mx-auto max-w-[800px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
+        <h1 class="text-heading-sm font-semibold text-graphite">Registra tu taller</h1>
+        <p class="mt-8 text-body-lg text-fog">
+            No necesitas crear una cuenta. Completa el formulario y un administrador revisará tu solicitud.
+        </p>
 
-    @if ($errors->any())
-        <div class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-            <p class="font-medium">Revisa los siguientes datos:</p>
-            <ul class="mt-1 list-inside list-disc">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    <ol class="mt-6 flex items-center gap-2 text-xs font-medium text-zinc-500" id="stepper-nav">
-        <li class="step-label flex-1 rounded-full bg-zinc-900 px-3 py-1.5 text-center text-white" data-step-label="1">1. Tus datos</li>
-        <li class="step-label flex-1 rounded-full bg-zinc-200 px-3 py-1.5 text-center" data-step-label="2">2. El taller</li>
-        <li class="step-label flex-1 rounded-full bg-zinc-200 px-3 py-1.5 text-center" data-step-label="3">3. Ubicación</li>
-        <li class="step-label flex-1 rounded-full bg-zinc-200 px-3 py-1.5 text-center" data-step-label="4">4. Confirmar</li>
-    </ol>
-
-    <form method="POST" action="{{ route('solicitudes.store') }}" novalidate id="solicitud-form" class="mt-6 space-y-6">
-        @csrf
-
-        {{-- Paso 1: solicitante --}}
-        <section data-step="1" class="space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 class="font-medium">Tus datos de contacto</h2>
-
-            <div>
-                <label for="solicitante_nombre" class="block text-sm font-medium text-zinc-700">Nombre completo</label>
-                <input type="text" name="solicitante_nombre" id="solicitante_nombre" required
-                    value="{{ old('solicitante_nombre') }}"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-
-            <div>
-                <label for="solicitante_email" class="block text-sm font-medium text-zinc-700">Email</label>
-                <input type="email" name="solicitante_email" id="solicitante_email" required
-                    value="{{ old('solicitante_email') }}"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-
-            <div>
-                <label for="solicitante_telefono" class="block text-sm font-medium text-zinc-700">Teléfono</label>
-                <input type="tel" name="solicitante_telefono" id="solicitante_telefono" required
-                    value="{{ old('solicitante_telefono') }}"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-        </section>
-
-        {{-- Paso 2: taller --}}
-        <section data-step="2" class="hidden space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 class="font-medium">Datos del taller</h2>
-
-            <div>
-                <label for="taller_nombre" class="block text-sm font-medium text-zinc-700">Nombre del taller</label>
-                <input type="text" name="taller_nombre" id="taller_nombre" required
-                    value="{{ old('taller_nombre') }}"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-
-            <div>
-                <label for="taller_direccion" class="block text-sm font-medium text-zinc-700">Dirección (opcional)</label>
-                <input type="text" name="taller_direccion" id="taller_direccion"
-                    value="{{ old('taller_direccion') }}"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-
-            <div>
-                <label for="referencia" class="block text-sm font-medium text-zinc-700">Referencia (opcional)</label>
-                <input type="text" name="referencia" id="referencia"
-                    value="{{ old('referencia') }}" placeholder="Ej. frente a la plaza principal"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-            </div>
-
-            <div>
-                <label for="categoria_principal_id" class="block text-sm font-medium text-zinc-700">Categoría principal (opcional)</label>
-                <select name="categoria_principal_id" id="categoria_principal_id"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
-                    <option value="">Sin especificar</option>
-                    @foreach ($categorias as $categoria)
-                        <option value="{{ $categoria->id }}" @selected(old('categoria_principal_id') == $categoria->id)>
-                            {{ $categoria->nombre }}
-                        </option>
+        @if ($errors->any())
+            <x-alert type="error" class="mt-24">
+                <p class="font-medium">Revisa los siguientes datos:</p>
+                <ul class="mt-4 list-inside list-disc">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
                     @endforeach
-                </select>
+                </ul>
+            </x-alert>
+        @endif
+
+        <ol class="mt-32 flex items-center gap-8 text-caption font-medium text-fog" id="stepper-nav">
+            <li class="step-label flex-1 rounded-pills bg-obsidian px-12 py-8 text-center text-white" data-step-label="1">1. Tus datos</li>
+            <li class="step-label flex-1 rounded-pills bg-cloud px-12 py-8 text-center text-iron" data-step-label="2">2. El taller</li>
+            <li class="step-label flex-1 rounded-pills bg-cloud px-12 py-8 text-center text-iron" data-step-label="3">3. Ubicación</li>
+            <li class="step-label flex-1 rounded-pills bg-cloud px-12 py-8 text-center text-iron" data-step-label="4">4. Confirmar</li>
+        </ol>
+
+        <form method="POST" action="{{ route('solicitudes.store') }}" novalidate id="solicitud-form" class="mt-24 space-y-24">
+            @csrf
+
+            {{-- Paso 1: solicitante --}}
+            <x-card data-step="1" class="space-y-20">
+                <h2 class="text-subheading font-semibold text-graphite">Tus datos de contacto</h2>
+
+                <x-input name="solicitante_nombre" label="Nombre completo" required />
+                <x-input name="solicitante_email" type="email" label="Email" required />
+                <x-input name="solicitante_telefono" type="tel" label="Teléfono" required />
+            </x-card>
+
+            {{-- Paso 2: taller --}}
+            <x-card data-step="2" class="hidden space-y-20">
+                <h2 class="text-subheading font-semibold text-graphite">Datos del taller</h2>
+
+                <x-input name="taller_nombre" label="Nombre del taller" required />
+                <x-input name="taller_direccion" label="Dirección (opcional)" />
+                <x-input name="referencia" label="Referencia (opcional)" placeholder="Ej. frente a la plaza principal" />
+
+                <x-select
+                    name="categoria_principal_id"
+                    label="Categoría principal (opcional)"
+                    placeholder="Sin especificar"
+                    :options="$categorias->pluck('nombre', 'id')"
+                />
+
+                <div>
+                    <label for="comentario" class="mb-8 block text-body font-medium text-graphite">Comentario (opcional)</label>
+                    <textarea name="comentario" id="comentario" rows="3"
+                        class="w-full rounded-inputs border border-cloud px-16 py-12 text-body text-graphite placeholder:text-ash focus:outline-none focus:ring-2 focus:ring-obsidian/20">{{ old('comentario') }}</textarea>
+                </div>
+            </x-card>
+
+            {{-- Paso 3: ubicación --}}
+            <x-card data-step="3" class="hidden space-y-16">
+                <h2 class="text-subheading font-semibold text-graphite">Ubicación en el mapa (opcional)</h2>
+                <p class="text-body text-fog">
+                    Toca el mapa para marcar dónde está el taller, o usa tu ubicación actual. Puedes omitir este paso si no
+                    estás seguro; el administrador podrá ajustarlo al aprobar la solicitud.
+                </p>
+
+                <x-button type="button" id="btn-mi-ubicacion" variant="ghost">
+                    Usar mi ubicación actual
+                </x-button>
+
+                <div id="map" class="h-[260px] w-full rounded-inputs border border-cloud" data-loading-text="Cargando mapa…"></div>
+
+                <p id="ubicacion-resumen" class="text-body text-fog">Sin ubicación seleccionada todavía.</p>
+
+                <input type="hidden" name="lat" id="lat" value="{{ old('lat') }}">
+                <input type="hidden" name="lon" id="lon" value="{{ old('lon') }}">
+            </x-card>
+
+            {{-- Paso 4: confirmación --}}
+            <x-card data-step="4" class="hidden space-y-20">
+                <h2 class="text-subheading font-semibold text-graphite">Confirma tu solicitud</h2>
+                <dl class="grid grid-cols-1 gap-x-16 gap-y-8 text-body sm:grid-cols-2" id="resumen"></dl>
+                <p class="text-caption text-ash">
+                    Al enviar, recibirás un enlace de seguimiento para consultar el estado de tu solicitud en cualquier
+                    momento (no necesitas crear una cuenta).
+                </p>
+            </x-card>
+
+            <div class="flex items-center justify-between">
+                <x-button type="button" id="btn-anterior" variant="ghost" class="hidden">
+                    Anterior
+                </x-button>
+                <div class="flex-1"></div>
+                <x-button type="button" id="btn-siguiente" variant="primary">
+                    Siguiente
+                </x-button>
+                <x-button type="submit" id="btn-enviar" variant="primary" class="hidden">
+                    <span id="btn-enviar-texto">Enviar solicitud</span>
+                </x-button>
             </div>
-
-            <div>
-                <label for="comentario" class="block text-sm font-medium text-zinc-700">Comentario (opcional)</label>
-                <textarea name="comentario" id="comentario" rows="3"
-                    class="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">{{ old('comentario') }}</textarea>
-            </div>
-        </section>
-
-        {{-- Paso 3: ubicación --}}
-        <section data-step="3" class="hidden space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 class="font-medium">Ubicación en el mapa (opcional)</h2>
-            <p class="text-sm text-zinc-600">
-                Toca el mapa para marcar dónde está el taller, o usa tu ubicación actual. Puedes omitir este paso si no
-                estás seguro; el administrador podrá ajustarlo al aprobar la solicitud.
-            </p>
-
-            <button type="button" id="btn-mi-ubicacion"
-                class="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-                Usar mi ubicación actual
-            </button>
-
-            <div id="map" class="h-64 w-full rounded-lg border border-zinc-200" data-loading-text="Cargando mapa…"></div>
-
-            <p id="ubicacion-resumen" class="text-sm text-zinc-500">Sin ubicación seleccionada todavía.</p>
-
-            <input type="hidden" name="lat" id="lat" value="{{ old('lat') }}">
-            <input type="hidden" name="lon" id="lon" value="{{ old('lon') }}">
-        </section>
-
-        {{-- Paso 4: confirmación --}}
-        <section data-step="4" class="hidden space-y-4 rounded-xl border border-zinc-200 bg-white p-5">
-            <h2 class="font-medium">Confirma tu solicitud</h2>
-            <dl class="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2" id="resumen"></dl>
-            <p class="text-xs text-zinc-500">
-                Al enviar, recibirás un enlace de seguimiento para consultar el estado de tu solicitud en cualquier
-                momento (no necesitas crear una cuenta).
-            </p>
-        </section>
-
-        <div class="flex items-center justify-between">
-            <button type="button" id="btn-anterior"
-                class="hidden rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-                Anterior
-            </button>
-            <div class="flex-1"></div>
-            <button type="button" id="btn-siguiente"
-                class="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800">
-                Siguiente
-            </button>
-            <button type="submit" id="btn-enviar"
-                class="hidden rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60">
-                <span id="btn-enviar-texto">Enviar solicitud</span>
-            </button>
-        </div>
-    </form>
+        </form>
+    </div>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -167,11 +125,11 @@
             function validarPaso(step) {
                 for (const field of requiredFieldsOf(step)) {
                     if (!field.value.trim()) {
-                        field.classList.add('border-red-400');
+                        field.classList.add('border-ember');
                         field.focus();
                         return false;
                     }
-                    field.classList.remove('border-red-400');
+                    field.classList.remove('border-ember');
                 }
                 return true;
             }
@@ -187,7 +145,7 @@
                     ['Ubicación', document.getElementById('lat').value ? 'Marcada en el mapa' : 'Sin marcar'],
                 ];
                 resumen.innerHTML = campos.map(([label, value]) =>
-                    `<div><dt class="font-medium text-zinc-500">${label}</dt><dd class="text-zinc-900">${value}</dd></div>`
+                    `<div><dt class="font-medium text-ash">${label}</dt><dd class="text-graphite">${value}</dd></div>`
                 ).join('');
             }
 
@@ -197,9 +155,10 @@
                 });
                 labels.forEach((label) => {
                     const isActive = Number(label.dataset.stepLabel) <= step;
-                    label.classList.toggle('bg-zinc-900', isActive);
+                    label.classList.toggle('bg-obsidian', isActive);
                     label.classList.toggle('text-white', isActive);
-                    label.classList.toggle('bg-zinc-200', !isActive);
+                    label.classList.toggle('bg-cloud', !isActive);
+                    label.classList.toggle('text-iron', !isActive);
                 });
                 btnAnterior.classList.toggle('hidden', step === 1);
                 btnSiguiente.classList.toggle('hidden', step === totalSteps);

@@ -10,12 +10,29 @@
 
 **Nota de implementación (no listada originalmente en `plan.md`):** `components/marketplace/stats-block.blade.php` no mergeaba `$attributes` en su elemento raíz, a diferencia del resto de componentes compartidos (`card`, `button`) — se corrigió agregando `$attributes->merge(...)`, cambio aditivo que no altera ningún uso existente (nadie pasaba `class` antes). Se descartó poner las estadísticas dentro de la banda oscura de confianza porque el componente usa `text-obsidian`/`text-fog` fijos (ilegible sobre `bg-graphite`); en vez de forzar colores vía props, se mantuvo la sección de estadísticas en fondo claro (mismo criterio de la vista original) y la banda oscura de confianza quedó como texto puro, sin números.
 
+## Home — ampliación 2026-07-28 (pedido explícito del usuario)
+
+- [x] Agregar sección de cotización ("habla con nuestro equipo"): 3 pasos + CTA único a `solicitudes.create` (sin datos de contacto inventados, ver `spec.md`/`plan.md`).
+- [x] Agregar sección de preguntas frecuentes (`<details>/<summary>` nativo, 4 preguntas basadas en comportamiento real).
+- [x] Animación sutil: `resources/js/reveal.js` (scroll-reveal vía `IntersectionObserver`) + `.reveal`/`.animate-float-slow` en `app.css`, aplicada a las secciones del Home y al blob decorativo del hero; hover-lift en tarjetas. Respeta `prefers-reduced-motion`.
+- [x] Correr suite completa de Pest + `npm run build` + smoke test tras los cambios.
+
+## Footer — rediseño 2026-07-28
+
+- [x] Rediseñar `components/marketplace/footer.blade.php` en columnas (marca/descripción, Marketplace, Para tu taller), responsive, y corregir el padding invertido (`px-16 sm:px-4` → progresión mobile-first correcta) en ese archivo.
+- [ ] `nav.blade.php` sigue con el mismo bug de padding invertido sin corregir — pendiente para el bloque "Resto de vistas marketplace" de abajo.
+
+## Formularios — hallazgo y migración 2026-07-28
+
+- [x] `resources/views/solicitudes/{crear,seguimiento}.blade.php` usaban un layout legado (`layouts/marketplace.blade.php`, sin nav/footer/design system) — migradas a `marketplace.layouts.app` + `<x-card>`/`<x-input>`/`<x-select>`/`<x-button>`/`<x-alert>`/`<x-badge>`, mismos `id`/`name`/rutas (JS del stepper y tests de `SolicitudPublicaTest.php` verificados sin cambios de comportamiento).
+- [x] Eliminado `resources/views/layouts/marketplace.blade.php` (sin consumidores tras la migración, verificado con grep).
+
 ## Resto de vistas marketplace
 
 - [ ] Auditar y ajustar `search/index.blade.php` en los 3 breakpoints.
 - [ ] Auditar y ajustar `workshops/show.blade.php` en los 3 breakpoints.
 - [ ] Auditar y ajustar `dashboard/index.blade.php` en los 3 breakpoints.
-- [ ] Auditar y ajustar `components/marketplace/{nav,footer}.blade.php` en los 3 breakpoints.
+- [ ] Auditar y ajustar `components/marketplace/nav.blade.php` en los 3 breakpoints (incluye el bug de padding invertido pendiente, ver arriba).
 
 ## Filament — ERP y Super Admin
 

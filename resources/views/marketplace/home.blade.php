@@ -6,7 +6,7 @@
     {{-- Hero — 018-modernizacion-ui/spec.md: landing page persuasiva, sin mapa ni buscador embebido.
          Esa experiencia sigue completa en /talleres/buscar; acá solo hay CTAs hacia ella. --}}
     <section class="relative overflow-hidden bg-obsidian text-white">
-        <div class="pointer-events-none absolute -right-64 -top-64 h-[320px] w-[320px] rounded-full bg-ember/20 blur-3xl md:h-[480px] md:w-[480px]"></div>
+        <div class="pointer-events-none absolute -right-64 -top-64 h-[320px] w-[320px] animate-float-slow rounded-full bg-ember/20 blur-3xl md:h-[480px] md:w-[480px]"></div>
 
         <div class="relative mx-auto max-w-[1200px] px-16 py-64 sm:px-24 md:py-80 lg:px-16 lg:py-120">
             <span class="inline-flex items-center gap-8 rounded-pills border border-white/15 bg-white/5 px-16 py-8 text-caption font-medium text-mist">
@@ -45,20 +45,20 @@
     </section>
 
     {{-- Cómo funciona: propuesta de valor para quien busca un taller. --}}
-    <section class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
+    <section class="reveal mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
         <h2 class="text-heading-sm font-semibold text-graphite">Cómo funciona</h2>
         <div class="mt-32 grid grid-cols-1 gap-24 md:grid-cols-3">
-            <div class="rounded-cards border border-cloud bg-white p-28">
+            <div class="rounded-cards border border-cloud bg-white p-28 transition duration-300 hover:-translate-y-4 hover:shadow-md">
                 <span class="text-heading-sm font-semibold text-ash">01</span>
                 <p class="mt-12 text-subheading font-semibold text-graphite">Busca</p>
                 <p class="mt-8 text-body text-fog">Filtra talleres por categoría, nombre o cercanía sin necesidad de crear una cuenta.</p>
             </div>
-            <div class="rounded-cards border border-cloud bg-white p-28">
+            <div class="rounded-cards border border-cloud bg-white p-28 transition duration-300 hover:-translate-y-4 hover:shadow-md">
                 <span class="text-heading-sm font-semibold text-ash">02</span>
                 <p class="mt-12 text-subheading font-semibold text-graphite">Compara</p>
                 <p class="mt-8 text-body text-fog">Revisa calificaciones, reseñas y horarios reales de cada taller antes de decidir.</p>
             </div>
-            <div class="rounded-cards border border-cloud bg-white p-28">
+            <div class="rounded-cards border border-cloud bg-white p-28 transition duration-300 hover:-translate-y-4 hover:shadow-md">
                 <span class="text-heading-sm font-semibold text-ash">03</span>
                 <p class="mt-12 text-subheading font-semibold text-graphite">Contacta</p>
                 <p class="mt-8 text-body text-fog">Llega directo al taller que más te convenga, sin intermediarios ni comisiones.</p>
@@ -67,14 +67,14 @@
     </section>
 
     @if ($categorias->isNotEmpty())
-        <section class="border-t border-cloud bg-paper">
+        <section class="reveal border-t border-cloud bg-paper">
             <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
                 <h2 class="text-heading-sm font-semibold text-graphite">Categorías</h2>
                 <div class="mt-24 grid grid-cols-2 gap-16 sm:grid-cols-3 lg:grid-cols-4">
                     @foreach ($categorias as $categoria)
                         <a
                             href="{{ route('talleres.buscar', ['categoria' => $categoria->slug]) }}"
-                            class="rounded-cards border border-cloud bg-white p-20 text-center text-body font-medium text-graphite transition hover:border-obsidian/40 hover:shadow-md"
+                            class="rounded-cards border border-cloud bg-white p-20 text-center text-body font-medium text-graphite transition duration-300 hover:-translate-y-2 hover:border-obsidian/40 hover:shadow-md"
                         >
                             {{ $categoria->nombre }}
                         </a>
@@ -85,7 +85,7 @@
     @endif
 
     {{-- Prueba social: estadísticas agregadas ya calculadas por HomeController. --}}
-    <section class="border-t border-cloud bg-white">
+    <section class="reveal border-t border-cloud bg-white">
         <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
             <div class="grid grid-cols-1 gap-32 sm:grid-cols-3">
                 <x-marketplace.stats-block :number="$stats['talleres']" label="Talleres publicados" />
@@ -95,7 +95,7 @@
         </div>
     </section>
 
-    <section class="bg-graphite py-48 text-center text-white md:py-64">
+    <section class="reveal bg-graphite py-48 text-center text-white md:py-64">
         <div class="mx-auto max-w-2xl px-16 sm:px-24">
             <p class="text-heading-sm font-semibold">Talleres verificados, cerca de donde estás</p>
             <p class="mt-12 text-body-lg text-mist">
@@ -105,7 +105,7 @@
     </section>
 
     {{-- Para dueños de taller: sección persuasiva hacia la solicitud de alta (004-solicitud-alta-taller). --}}
-    <section class="border-t border-cloud bg-paper">
+    <section class="reveal border-t border-cloud bg-paper">
         <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-80 lg:px-16">
             <div class="grid grid-cols-1 gap-40 lg:grid-cols-2 lg:items-center">
                 <div>
@@ -133,7 +133,7 @@
                         'Órdenes de trabajo con seguimiento por estado',
                         'Notificaciones automáticas para tu equipo',
                     ] as $beneficio)
-                        <li class="flex items-start gap-12 rounded-cards border border-cloud bg-white p-20">
+                        <li class="flex items-start gap-12 rounded-cards border border-cloud bg-white p-20 transition duration-300 hover:-translate-y-2 hover:shadow-md">
                             <svg class="mt-2 size-20 shrink-0 text-ember" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M4.5 12.75l6 6 9-13.5" />
                             </svg>
@@ -145,8 +145,71 @@
         </div>
     </section>
 
+    {{-- Cotización: cómo contactar a nuestro equipo para llevar el taller al sistema. --}}
+    <section class="reveal border-t border-cloud bg-white">
+        <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-80 lg:px-16">
+            <div class="mx-auto max-w-2xl text-center">
+                <span class="inline-flex items-center rounded-pills border border-cloud bg-paper px-16 py-8 text-caption font-medium text-iron">
+                    ¿Quieres una cotización?
+                </span>
+                <h2 class="mt-24 text-heading-sm font-semibold text-graphite md:text-heading">
+                    Habla con nuestro equipo
+                </h2>
+                <p class="mt-16 text-body-lg text-fog">
+                    Cuéntanos sobre tu taller desde el mismo formulario de registro y nuestro equipo te contacta para coordinar la implementación y resolver tus dudas sobre el sistema.
+                </p>
+            </div>
+
+            <div class="mx-auto mt-40 grid max-w-3xl grid-cols-1 gap-24 sm:grid-cols-3">
+                @foreach ([
+                    ['n' => '01', 't' => 'Cuéntanos de tu taller', 'd' => 'Completa el formulario de registro con tus datos de contacto y los del taller.'],
+                    ['n' => '02', 't' => 'Lo revisamos', 'd' => 'Un administrador valida la información antes de aprobarla.'],
+                    ['n' => '03', 't' => 'Te contactamos', 'd' => 'Coordinamos contigo la puesta en marcha del marketplace y el sistema de gestión.'],
+                ] as $paso)
+                    <div class="rounded-cards border border-cloud bg-paper p-24 text-center transition duration-300 hover:-translate-y-4 hover:shadow-md">
+                        <span class="text-heading-sm font-semibold text-ash">{{ $paso['n'] }}</span>
+                        <p class="mt-12 text-subheading font-semibold text-graphite">{{ $paso['t'] }}</p>
+                        <p class="mt-8 text-body text-fog">{{ $paso['d'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-40 flex justify-center">
+                <x-button :href="route('solicitudes.create')" variant="primary">
+                    Solicitar cotización
+                </x-button>
+            </div>
+        </div>
+    </section>
+
+    {{-- Preguntas frecuentes. --}}
+    <section class="reveal border-t border-cloud bg-paper">
+        <div class="mx-auto max-w-[800px] px-16 py-48 sm:px-24 md:py-80 lg:px-16">
+            <h2 class="text-heading-sm font-semibold text-graphite">Preguntas frecuentes</h2>
+
+            <div class="mt-32 divide-y divide-cloud rounded-cards border border-cloud bg-white">
+                @foreach ([
+                    ['q' => '¿Necesito crear una cuenta para buscar un taller?', 'a' => 'No. La búsqueda y comparación de talleres en el marketplace es pública, sin registro.'],
+                    ['q' => '¿Cómo registro mi taller en el marketplace?', 'a' => 'Completa el formulario de registro con tus datos y los del taller. Tampoco necesitas crear una cuenta para eso.'],
+                    ['q' => '¿Qué pasa después de enviar mi solicitud?', 'a' => 'Un administrador la revisa. Recibes un enlace de seguimiento para consultar el estado en cualquier momento y te contactamos con el resultado.'],
+                    ['q' => '¿Qué incluye el sistema de gestión para talleres?', 'a' => 'Clientes y vehículos, control de inventario, órdenes de trabajo con seguimiento por estado y notificaciones para tu equipo.'],
+                ] as $faq)
+                    <details class="group p-20">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-16 text-body-lg font-medium text-graphite marker:content-none">
+                            {{ $faq['q'] }}
+                            <svg class="size-20 shrink-0 text-ash transition duration-300 group-open:rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                        </summary>
+                        <p class="mt-12 text-body text-fog">{{ $faq['a'] }}</p>
+                    </details>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
     {{-- CTA final. --}}
-    <section class="bg-obsidian py-48 text-center text-white md:py-64">
+    <section class="reveal bg-obsidian py-48 text-center text-white md:py-64">
         <div class="mx-auto max-w-xl px-16 sm:px-24">
             <p class="text-heading-sm font-semibold">¿Listo para encontrar tu taller ideal?</p>
             <p class="mt-12 text-body-lg text-mist">Busca por categoría, calificación o cercanía en segundos.</p>

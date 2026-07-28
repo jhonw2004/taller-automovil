@@ -8,6 +8,7 @@ import starRating from './alpine/components/rating';
 import resenaForm from './alpine/components/resena-form';
 import favoritoToggle from './alpine/components/favorito';
 import notificacionesPanel from './alpine/components/notificaciones';
+import initScrollReveal from './reveal';
 
 registerSearchStore(Alpine);
 Alpine.data('map', map);
@@ -20,3 +21,5 @@ Alpine.data('notificacionesPanel', notificacionesPanel);
 
 window.Alpine = Alpine;
 Alpine.start();
+
+document.addEventListener('DOMContentLoaded', initScrollReveal);

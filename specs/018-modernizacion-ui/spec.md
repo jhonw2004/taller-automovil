@@ -19,7 +19,8 @@ Es una feature **puramente de presentación**: cambia plantillas Blade, CSS, tem
 - **El design system de `016` es la base, no el techo:** se reutilizan paleta, tipografía Cosmica/DM Sans y radii ya definidos. Esta feature agrega jerarquía visual, composición y personalización — no inventa una paleta nueva.
 - **Mobile-first real:** cada sección tocada se verifica en los 3 breakpoints de `memory/constitution.md` §5 (`<768px`, `768–1024px`, `>1024px`), no solo se le agregan clases `sm:`/`lg:` sin probarlas.
 - **Filament deja de verse "de fábrica":** tema personalizado (tipografía, densidad, tarjetas de dashboard, login) dentro de lo que Filament v5 permite vía `viteTheme` + `colors()`, sin forkear componentes React/Livewire internos de Filament.
-- **Minimalismo:** menos ruido visual, más espacio en blanco, jerarquía tipográfica clara. No se agregan animaciones complejas ni micro-interacciones (eso sigue fuera de alcance, igual que en `016`).
+- **Minimalismo:** menos ruido visual, más espacio en blanco, jerarquía tipográfica clara.
+- **Animación sutil, no ruido (revisado 2026-07-28, pedido explícito del usuario — reemplaza la exclusión original que heredaba de `016`):** se permiten micro-interacciones ligeras (fade/slide-up al entrar en viewport, hover-lift en tarjetas, un elemento decorativo con movimiento lento) implementadas con CSS/`IntersectionObserver` nativo, sin librerías nuevas, siempre respetando `prefers-reduced-motion`. Nunca animación que bloquee contenido si JS falla, ni transiciones de más de ~600ms.
 
 ## Actores
 
@@ -30,12 +31,14 @@ Los mismos cuatro de `016-ui-design-system`: visitante público, usuario marketp
 ### Home (`/`) — landing page persuasiva
 
 - Dado un visitante en `/`, cuando la página carga, entonces **no** contiene el mapa Leaflet ni el formulario de búsqueda embebido (`x-marketplace.map`, `search-experience`) — esos siguen existiendo y funcionando sin cambios en `/talleres/buscar`.
-- Dado el Home, entonces tiene múltiples secciones apiladas verticalmente, como mínimo: (1) hero con propuesta de valor y dos CTAs, (2) cómo funciona / propuesta de valor para quien busca un taller, (3) categorías destacadas (ya existente, se conserva y se restyla), (4) estadísticas de confianza (ya existente: talleres publicados, categorías, calificación promedio), (5) sección dedicada a dueños de talleres, (6) CTA final.
+- Dado el Home, entonces tiene múltiples secciones apiladas verticalmente, como mínimo: (1) hero con propuesta de valor y dos CTAs, (2) cómo funciona / propuesta de valor para quien busca un taller, (3) categorías destacadas (ya existente, se conserva y se restyla), (4) estadísticas de confianza (ya existente: talleres publicados, categorías, calificación promedio), (5) sección dedicada a dueños de talleres, (6) sección de cotización ("habla con nuestro equipo") explicando cómo un dueño de taller llega a un contacto humano, (7) preguntas frecuentes, (8) CTA final.
+- Dado la sección de cotización, entonces explica el proceso (completar el formulario → revisión → contacto del equipo) y su único CTA es `route('solicitudes.create')` — no se agrega un canal de contacto nuevo (email/teléfono/WhatsApp) porque ninguno existe hoy en el proyecto; si se agrega uno real en el futuro, se documenta explícitamente antes de mostrarlo.
 - Dado el hero, entonces incluye un botón "Buscar talleres" que enlaza a `route('talleres.buscar')` y un botón "Registra tu taller" que enlaza a `route('solicitudes.create')` — ambas rutas ya existentes, sin nuevas rutas.
 - Dado la sección para dueños de taller, entonces comunica de forma persuasiva (título, 3-4 beneficios concretos: gestión de clientes y vehículos, control de inventario, órdenes de trabajo, notificaciones) que el sistema ofrece un ERP para administrar su taller, y tiene su propio CTA hacia `route('solicitudes.create')`.
 - Dado el Home en móvil (`<768px`), entonces todas las secciones son de una sola columna, sin overflow horizontal, y los CTAs son de ancho completo o centrados (no recortados).
 - Dado el Home en escritorio (`>1024px`), entonces el hero y las secciones usan el ancho disponible con composición de múltiples columnas donde el contenido lo permita (ej. beneficios en grid, no todo en una sola columna larga).
 - Dado el Home, entonces sigue usando `marketplace.layouts.app` y los componentes de `016` (`x-button`, `x-badge`, `x-marketplace.stats-block`), sin introducir un layout paralelo.
+- Dado el footer (`components/marketplace/footer.blade.php`), entonces está organizado en columnas (marca/descripción, navegación del marketplace, enlaces para dueños de taller) en vez de una sola fila de enlaces, mantiene los mismos destinos (`home`, `talleres.buscar`, `solicitudes.create`) y colapsa a una columna en móvil sin overflow.
 
 ### Resto de vistas del marketplace
 
@@ -57,6 +60,8 @@ Los mismos cuatro de `016-ui-design-system`: visitante público, usuario marketp
 ## Fuera de alcance (MVP de esta feature)
 
 - Cualquier cambio de lógica de negocio, validaciones de servidor, permisos, rutas nuevas o modelos — si una vista necesita datos que su controlador no provee hoy, se documenta como pendiente y no se implementa en esta feature.
-- Modo oscuro, i18n, SEO, animaciones/micro-interacciones complejas — mismos ítems ya fuera de alcance en `016-ui-design-system`.
+- Modo oscuro, i18n, SEO — mismos ítems ya fuera de alcance en `016-ui-design-system`.
+- Animación **compleja** (librerías de animación, animaciones encadenadas/orquestadas, parallax): la animación permitida es la sutil descrita en "Principios" arriba (revisado 2026-07-28).
+- Canales de contacto reales (email/teléfono/WhatsApp del negocio): no existen en el proyecto hoy: cualquier sección de "contacto"/"cotización" del Home usa `route('solicitudes.create')` como único mecanismo, nunca datos de contacto inventados.
 - Testimonios/reseñas destacadas en el Home con datos reales: si se agrega una sección de prueba social más allá de las estadísticas agregadas ya existentes, se hace con los datos que el `HomeController` ya expone; no se crean nuevas consultas agregadas salvo que se documenten explícitamente en `plan.md`.
 - Rediseño de la lógica del mapa Leaflet o del buscador Alpine (`search-experience`): se reubican, no se reescriben.
