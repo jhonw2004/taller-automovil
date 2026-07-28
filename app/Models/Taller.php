@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Casts\GeometryCast;
+use App\Observers\TallerObserver;
 use App\Traits\HasGeolocation;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +18,7 @@ use Illuminate\Support\Str;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 
+#[ObservedBy(TallerObserver::class)]
 class Taller extends Model
 {
     use HasFactory, HasGeolocation, HasSlug, SoftDeletes;

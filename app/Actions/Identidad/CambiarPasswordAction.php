@@ -2,6 +2,7 @@
 
 namespace App\Actions\Identidad;
 
+use App\Actions\Auditoria\RegistrarAccesoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\HistorialPassword;
 use App\Models\UsuarioSistema;
@@ -15,7 +16,9 @@ use Illuminate\Support\Facades\Hash;
  * No se implementa vía `Illuminate\Auth\Events\PasswordReset` porque ese evento pertenece
  * al flujo de recuperación por email de Laravel, que está fuera de alcance del MVP para
  * usuario sistema (no hay tabla `password_reset_tokens`). Este cambio es siempre iniciado
- * por el propio usuario autenticado, no por un token de email.
+ * por el propio usuario autenticado, no por un token de email — por el mismo motivo,
+ * `auditoria_accesos` (PASSWORD_CHANGE/EXITOSO, 015-plan.md) se audita directo aquí en vez de
+ * vía un listener de evento nativo.
  */
 class CambiarPasswordAction
 {
@@ -61,6 +64,13 @@ class CambiarPasswordAction
                 'intentos_fallidos' => 0,
                 'bloqueado_hasta' => null,
             ]);
+
+            app(RegistrarAccesoAuditoriaAction::class)->execute(
+                tipoAcceso: 'PASSWORD_CHANGE',
+                resultado: 'EXITOSO',
+                usuarioSistemaId: $usuario->id,
+                identificador: $usuario->username,
+            );
         });
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Talleres;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\Taller;
 use App\Models\UsuarioSistema;
@@ -14,8 +15,9 @@ use Illuminate\Support\Facades\DB;
  * ámbito Super Admin para esta operación, así que se restringe a Super Admin (no existe un
  * permiso equivalente para que el propio taller se autosuspenda).
  *
- * Auditoría vía `activity()` (spatie/laravel-activitylog), igual que las otras dos Actions de
- * Taller — ver `CambiarVisibilidadTallerAction` para el porqué de no usar `auditoria_eventos`.
+ * Auditoría vía `RegistrarEventoAuditoriaAction` → `auditoria_eventos`, igual que las otras dos
+ * Actions de Taller (ver `CambiarVisibilidadTallerAction` sobre el doble tracking con
+ * `auditoria_talleres`, que también aplica aquí porque `estado` es un campo sensible).
  */
 class CambiarEstadoTallerAction
 {
@@ -37,11 +39,13 @@ class CambiarEstadoTallerAction
             $taller->estado = $nuevoEstado;
             $taller->save();
 
-            activity()
-                ->causedBy($actor)
-                ->performedOn($taller)
-                ->withProperties(['anterior' => $anterior, 'nuevo' => $nuevoEstado])
-                ->log('cambio_estado_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'cambio_estado_taller',
+                usuarioSistemaId: $actor->id,
+                tallerId: $taller->id,
+                entidad: $taller,
+                datos: ['anterior' => $anterior, 'nuevo' => $nuevoEstado],
+            );
 
             return $taller;
         });

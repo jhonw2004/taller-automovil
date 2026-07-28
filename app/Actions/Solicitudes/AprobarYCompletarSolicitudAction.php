@@ -2,6 +2,7 @@
 
 namespace App\Actions\Solicitudes;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
@@ -76,11 +77,13 @@ class AprobarYCompletarSolicitudAction
                 'observacion' => "Taller creado: {$taller->nombre} (#{$taller->id}).",
             ]);
 
-            activity()
-                ->causedBy($actor)
-                ->performedOn($solicitud)
-                ->withProperties(['taller_id' => $taller->id])
-                ->log('aprobar_completar_solicitud_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'aprobar_completar_solicitud_taller',
+                usuarioSistemaId: $actor->id,
+                tallerId: $taller->id,
+                entidad: $solicitud,
+                datos: ['taller_id' => $taller->id],
+            );
 
             SolicitudAprobadaNotification::enviar($solicitud, $actor);
 

@@ -3,9 +3,9 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
+use App\Http\Middleware\AuditarAccesoDenegadoFilament;
 use App\Http\Middleware\CheckSessionExpiration;
 use App\Http\Middleware\ForzarCambioPasswordMiddleware;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -88,7 +88,10 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                // 015-auditoria: reemplaza Filament\Http\Middleware\Authenticate por una variante
+                // que audita "acceso denegado" (auditoria_accesos) antes del abort(403) — ver esa
+                // clase.
+                AuditarAccesoDenegadoFilament::class,
                 CheckSessionExpiration::class,
                 // SetTallerActivo NO va aquí (decisión 2026-07-26): el Super Admin no opera
                 // "dentro" de un taller, su autorización ya se resuelve con esSuperAdmin() en

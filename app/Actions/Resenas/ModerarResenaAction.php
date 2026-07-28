@@ -2,6 +2,7 @@
 
 namespace App\Actions\Resenas;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Events\ResenaGuardada;
 use App\Exceptions\BusinessException;
 use App\Models\Resena;
@@ -35,11 +36,13 @@ class ModerarResenaAction
 
             event(new ResenaGuardada($resena, $resena->taller));
 
-            activity()
-                ->causedBy($actor)
-                ->performedOn($resena)
-                ->withProperties(['anterior' => $anterior, 'nuevo' => $estado])
-                ->log('moderacion_resena');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'moderacion_resena',
+                usuarioSistemaId: $actor->id,
+                tallerId: $resena->taller_id,
+                entidad: $resena,
+                datos: ['anterior' => $anterior, 'nuevo' => $estado],
+            );
 
             return $resena;
         });

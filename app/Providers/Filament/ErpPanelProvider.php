@@ -4,10 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\Auth\Pages\Login;
 use App\Filament\Erp\Widgets\TenantSwitcher;
+use App\Http\Middleware\AuditarAccesoDenegadoFilament;
 use App\Http\Middleware\CheckSessionExpiration;
 use App\Http\Middleware\ForzarCambioPasswordMiddleware;
 use App\Http\Middleware\SetTallerActivo;
-use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -88,7 +88,8 @@ class ErpPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                // 015-auditoria: ver AdminPanelProvider.
+                AuditarAccesoDenegadoFilament::class,
                 CheckSessionExpiration::class,
                 // NO se usa ->tenant() nativo de Filament (decisión 2026-07-26): ya existe
                 // BelongsToTaller + sesión funcionando y probado; usar ambos duplicaría la

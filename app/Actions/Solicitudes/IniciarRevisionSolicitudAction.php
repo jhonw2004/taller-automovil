@@ -2,6 +2,7 @@
 
 namespace App\Actions\Solicitudes;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
@@ -39,7 +40,11 @@ class IniciarRevisionSolicitudAction
                 'usuario_sistema_id' => $actor->id,
             ]);
 
-            activity()->causedBy($actor)->performedOn($solicitud)->log('iniciar_revision_solicitud_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'iniciar_revision_solicitud_taller',
+                usuarioSistemaId: $actor->id,
+                entidad: $solicitud,
+            );
 
             return $solicitud;
         });

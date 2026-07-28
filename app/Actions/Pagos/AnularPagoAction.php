@@ -2,6 +2,7 @@
 
 namespace App\Actions\Pagos;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\NotaVenta;
 use App\Models\Pago;
@@ -13,7 +14,8 @@ use Illuminate\Support\Facades\DB;
  * físicamente, constitution.md §2) y se excluye de `monto_pagado` al recalcular la nota — si la
  * nota estaba `PAGADA` vuelve a `PENDIENTE` (o `EMITIDA` si `monto_pagado` queda en 0), regla que
  * ya aplica `NotaVenta::recalcularTotales()` sin necesidad de lógica adicional aquí. Auditado vía
- * `activity()` (013-spec.md: "la anulación de pago queda auditada"), mismo patrón que
+ * `RegistrarEventoAuditoriaAction` → `auditoria_eventos` (013-spec.md: "la anulación de pago queda
+ * auditada"; 015-plan.md la lista en el catálogo de eventos de negocio), mismo patrón que
  * `AnularNotaVentaAction` (012) — no existe una tabla de historial dedicada para pagos.
  */
 class AnularPagoAction
@@ -33,10 +35,12 @@ class AnularPagoAction
 
             $nota->recalcularTotales();
 
-            activity()
-                ->causedBy($usuarioSistemaId)
-                ->performedOn($pago)
-                ->log('anular_pago');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'anular_pago',
+                usuarioSistemaId: $usuarioSistemaId,
+                tallerId: $nota->taller_id,
+                entidad: $pago,
+            );
 
             return $pago->fresh();
         });

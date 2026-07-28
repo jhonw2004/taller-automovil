@@ -2,6 +2,7 @@
 
 namespace App\Actions\Notas;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Actions\Inventario\RegistrarMovimientoInventarioAction;
 use App\Exceptions\BusinessException;
 use App\Models\NotaVenta;
@@ -22,10 +23,10 @@ use Illuminate\Support\Facades\DB;
  *    la cantidad a reponer es la misma que la línea ya registra.
  * 4. Si proviene de una orden (`orden_trabajo_id` no nulo): no se toca inventario — el descuento de
  *    stock ocurrió al marcar los repuestos como ENTREGADO en la orden (010/011), no en la nota.
- * 5. Cambia el estado a ANULADA y audita vía `activity()` (spatie/laravel-activitylog, mismo
- *    criterio que `CambiarEstadoTallerAction`/`CambiarVisibilidadTallerAction` de 003 — 012-plan.md
+ * 5. Cambia el estado a ANULADA y audita vía `RegistrarEventoAuditoriaAction` → `auditoria_eventos`
+ *    (015-plan.md: "anulación de nota" está en el catálogo de eventos de negocio) — 012-plan.md
  *    no define una tabla de historial dedicada para notas, a diferencia de
- *    `ordenes_trabajo_estados_historial` en 011).
+ *    `ordenes_trabajo_estados_historial` en 011.
  */
 class AnularNotaVentaAction
 {
@@ -65,11 +66,13 @@ class AnularNotaVentaAction
             $nota->estado = 'ANULADA';
             $nota->save();
 
-            activity()
-                ->causedBy($usuarioSistemaId)
-                ->performedOn($nota)
-                ->withProperties(['motivo' => $motivo])
-                ->log('anular_nota_venta');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'anular_nota_venta',
+                usuarioSistemaId: $usuarioSistemaId,
+                tallerId: $nota->taller_id,
+                entidad: $nota,
+                datos: ['motivo' => $motivo],
+            );
 
             return $nota->fresh();
         });

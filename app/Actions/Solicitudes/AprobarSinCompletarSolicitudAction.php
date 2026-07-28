@@ -2,6 +2,7 @@
 
 namespace App\Actions\Solicitudes;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
@@ -45,7 +46,11 @@ class AprobarSinCompletarSolicitudAction
                 'usuario_sistema_id' => $actor->id,
             ]);
 
-            activity()->causedBy($actor)->performedOn($solicitud)->log('aprobar_sin_completar_solicitud_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'aprobar_sin_completar_solicitud_taller',
+                usuarioSistemaId: $actor->id,
+                entidad: $solicitud,
+            );
 
             SolicitudAprobadaNotification::enviar($solicitud, $actor);
 

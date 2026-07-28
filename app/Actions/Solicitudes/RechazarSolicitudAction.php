@@ -2,6 +2,7 @@
 
 namespace App\Actions\Solicitudes;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\SolicitudTaller;
 use App\Models\SolicitudTallerHistorial;
@@ -46,7 +47,12 @@ class RechazarSolicitudAction
                 'observacion' => $motivoRechazo,
             ]);
 
-            activity()->causedBy($actor)->performedOn($solicitud)->log('rechazar_solicitud_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'rechazar_solicitud_taller',
+                usuarioSistemaId: $actor->id,
+                entidad: $solicitud,
+                datos: ['motivo' => $motivoRechazo],
+            );
 
             SolicitudRechazadaNotification::enviar($solicitud, $actor);
 

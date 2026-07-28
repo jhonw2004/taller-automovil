@@ -5,13 +5,13 @@ use App\Actions\Empleados\CrearEmpleadoSinAccesoAction;
 use App\Actions\Empleados\VincularAccesoEmpleadoAction;
 use App\Exceptions\BusinessException;
 use App\Models\AsignacionRol;
+use App\Models\AuditoriaEvento;
 use App\Models\CredencialSistema;
 use App\Models\Empleado;
 use App\Models\Rol;
 use App\Models\Taller;
 use App\Models\UsuarioSistema;
 use Illuminate\Database\QueryException;
-use Spatie\Activitylog\Models\Activity;
 
 function datosEmpleadoDePrueba(): array
 {
@@ -53,7 +53,7 @@ it('CrearEmpleadoConAccesoAction: crea identidad+usuario+credencial+rol+vinculo+
     expect(CredencialSistema::where('usuario_sistema_id', $usuario->id)->first()?->debe_cambiar_password)->toBeTrue();
     expect(AsignacionRol::where('usuario_sistema_id', $usuario->id)->where('rol_id', $rol->id)->where('taller_id', $taller->id)->exists())->toBeTrue();
     expect($resultado['password_temporal'])->toBeString()->not->toBeEmpty();
-    expect(Activity::where('description', 'acceso_otorgado_empleado')->exists())->toBeTrue();
+    expect(AuditoriaEvento::where('evento', 'acceso_otorgado_empleado')->exists())->toBeTrue();
 });
 
 it('CrearEmpleadoConAccesoAction: el rol debe corresponder al taller del empleado, si no rechaza y hace rollback total', function () {

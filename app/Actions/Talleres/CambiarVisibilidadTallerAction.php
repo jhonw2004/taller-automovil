@@ -2,16 +2,18 @@
 
 namespace App\Actions\Talleres;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\Taller;
 use App\Models\UsuarioSistema;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Auditoría vía el helper `activity()` de spatie/laravel-activitylog (misma tabla genérica que
- * `App\Traits\BelongsToTaller::sinScope()`), no la tabla `auditoria_eventos` de 015-auditoria:
- * esa tabla todavía no existe (015 depende de 003, se implementa después en el orden del
- * proyecto). Revisar si conviene migrar este log cuando se implemente 015.
+ * Auditoría vía `RegistrarEventoAuditoriaAction` → `auditoria_eventos` (015-plan.md). El cambio
+ * de `visible_en_mapa` en sí también queda en `auditoria_talleres` vía `TallerObserver` (campo
+ * sensible del catálogo de 015-spec.md) — este evento nombrado es un registro de negocio
+ * adicional, no un reemplazo: `auditoria_talleres` es el snapshot genérico de cualquier campo
+ * sensible, `auditoria_eventos` es el catálogo curado de acciones de negocio.
  */
 class CambiarVisibilidadTallerAction
 {
@@ -36,11 +38,13 @@ class CambiarVisibilidadTallerAction
             $taller->visible_en_mapa = $visible;
             $taller->save();
 
-            activity()
-                ->causedBy($actor)
-                ->performedOn($taller)
-                ->withProperties(['anterior' => $anterior, 'nuevo' => $visible])
-                ->log('cambio_visibilidad_taller');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'cambio_visibilidad_taller',
+                usuarioSistemaId: $actor->id,
+                tallerId: $taller->id,
+                entidad: $taller,
+                datos: ['anterior' => $anterior, 'nuevo' => $visible],
+            );
 
             return $taller;
         });

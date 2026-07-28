@@ -2,6 +2,7 @@
 
 namespace App\Actions\Inventario;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Events\StockBajoDetectado;
 use App\Exceptions\BusinessException;
 use App\Models\InventarioMovimiento;
@@ -13,6 +14,13 @@ use Illuminate\Support\Facades\DB;
  * (010-inventario-repuestos/plan.md): `lockForUpdate` sobre el repuesto, calculo de
  * `stock_resultante` segun el tipo de movimiento, rechazo si quedaria negativo — todo en la
  * misma transaccion (constitution.md §3.6/§3.7).
+ *
+ * Solo `AJUSTE_POSITIVO`/`AJUSTE_NEGATIVO` escriben además en `auditoria_eventos`
+ * (015-plan.md: "ajuste de inventario" en el catálogo de eventos de negocio) — `ENTRADA`/`SALIDA`
+ * rutinarias (compra normal, consumo de una línea de orden) ya quedan completas en
+ * `inventario_movimientos` (append-only, con `usuario_sistema_id`), que es en sí mismo el
+ * registro histórico; duplicar cada una en `auditoria_eventos` sería ruido, no señal, para un
+ * log pensado para soporte/cumplimiento sobre correcciones manuales excepcionales.
  */
 class RegistrarMovimientoInventarioAction
 {
@@ -89,6 +97,20 @@ class RegistrarMovimientoInventarioAction
 
             $repuesto->stock_actual = $stockResultante;
             $repuesto->save();
+
+            if (in_array($tipoMovimiento, ['AJUSTE_POSITIVO', 'AJUSTE_NEGATIVO'], true)) {
+                app(RegistrarEventoAuditoriaAction::class)->execute(
+                    evento: 'ajuste_inventario',
+                    usuarioSistemaId: $usuarioSistemaId,
+                    tallerId: $repuesto->taller_id,
+                    entidad: $movimiento,
+                    datos: [
+                        'tipo_movimiento' => $tipoMovimiento,
+                        'cantidad' => $cantidad,
+                        'motivo' => $motivo,
+                    ],
+                );
+            }
 
             if ($stockResultante <= (float) $repuesto->stock_minimo) {
                 event(new StockBajoDetectado($repuesto->fresh()));

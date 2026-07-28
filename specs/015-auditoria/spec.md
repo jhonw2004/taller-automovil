@@ -1,6 +1,6 @@
 ---
 id: 015-auditoria
-status: draft
+status: implemented
 depends_on: [001-identidad-autenticacion, 003-gestion-talleres]
 resumen: "Auditoría append-only de accesos, eventos de negocio y cambios geográficos/de datos de talleres."
 ---

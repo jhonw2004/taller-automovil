@@ -3,10 +3,10 @@
 use App\Actions\Pagos\AnularPagoAction;
 use App\Actions\Pagos\RegistrarPagoAction;
 use App\Exceptions\BusinessException;
+use App\Models\AuditoriaEvento;
 use App\Models\MetodoPago;
 use App\Models\NotaVenta;
 use App\Models\Taller;
-use Spatie\Activitylog\Models\Activity;
 
 function notaConLineaParaAnularPago(float $total): NotaVenta
 {
@@ -77,5 +77,5 @@ it('la anulacion de pago queda auditada', function () {
 
     app(AnularPagoAction::class)->execute($pago, usuarioSistemaId: null);
 
-    expect(Activity::where('description', 'anular_pago')->exists())->toBeTrue();
+    expect(AuditoriaEvento::where('evento', 'anular_pago')->exists())->toBeTrue();
 });

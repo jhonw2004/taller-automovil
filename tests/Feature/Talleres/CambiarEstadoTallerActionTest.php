@@ -3,10 +3,10 @@
 use App\Actions\Roles\AsignarRolAction;
 use App\Actions\Talleres\CambiarEstadoTallerAction;
 use App\Exceptions\BusinessException;
+use App\Models\AuditoriaEvento;
 use App\Models\Rol;
 use App\Models\Taller;
 use App\Models\UsuarioSistema;
-use Spatie\Activitylog\Models\Activity;
 
 it('el super admin puede suspender un taller', function () {
     $taller = Taller::factory()->create(['estado' => 'ACTIVO']);
@@ -28,10 +28,10 @@ it('registra la auditoria del cambio de estado', function () {
 
     app(CambiarEstadoTallerAction::class)->execute($taller, 'INACTIVO', $superAdmin);
 
-    $log = Activity::where('description', 'cambio_estado_taller')->latest('id')->first();
+    $log = AuditoriaEvento::where('evento', 'cambio_estado_taller')->latest('id')->first();
     expect($log)->not->toBeNull();
-    expect($log->properties['anterior'])->toBe('ACTIVO');
-    expect($log->properties['nuevo'])->toBe('INACTIVO');
+    expect($log->datos['anterior'])->toBe('ACTIVO');
+    expect($log->datos['nuevo'])->toBe('INACTIVO');
 });
 
 it('rechaza el cambio de estado si el actor no es super admin', function () {

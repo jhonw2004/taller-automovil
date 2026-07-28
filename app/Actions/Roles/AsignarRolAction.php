@@ -2,6 +2,7 @@
 
 namespace App\Actions\Roles;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Exceptions\BusinessException;
 use App\Models\AsignacionRol;
 use App\Models\Rol;
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\DB;
  * `$asignadoPor = null` está reservado para el bootstrap del sistema (seeders): no hay
  * super admin todavía cuando se crea el primero, así que ese caso omite las validaciones
  * de "quién puede asignar" y confía en el llamador (solo seeders deben pasar null).
+ *
+ * Audita vía `RegistrarEventoAuditoriaAction` → `auditoria_eventos` (015-plan.md: "asignación de
+ * rol" está en el catálogo de eventos de negocio) — brecha real: esta Action nunca había
+ * auditado, `002-plan.md` no definía `auditoria_eventos` porque `015` no existía todavía. Un
+ * `asignadoPor` null (bootstrap) también queda auditado, con `usuario_sistema_id` null.
  */
 class AsignarRolAction
 {
@@ -62,14 +68,26 @@ class AsignarRolAction
             throw new BusinessException('El usuario ya tiene este rol asignado en este taller.');
         }
 
-        return DB::transaction(fn () => AsignacionRol::create([
-            'usuario_sistema_id' => $usuario->id,
-            'rol_id' => $rol->id,
-            'taller_id' => $tallerId,
-            'activo' => true,
-            'asignado_por_usuario_sistema_id' => $asignadoPor?->id,
-            'vigente_desde' => $vigenteDesde ?? now()->toDateString(),
-            'vigente_hasta' => $vigenteHasta,
-        ]));
+        return DB::transaction(function () use ($usuario, $rol, $tallerId, $asignadoPor, $vigenteDesde, $vigenteHasta) {
+            $asignacion = AsignacionRol::create([
+                'usuario_sistema_id' => $usuario->id,
+                'rol_id' => $rol->id,
+                'taller_id' => $tallerId,
+                'activo' => true,
+                'asignado_por_usuario_sistema_id' => $asignadoPor?->id,
+                'vigente_desde' => $vigenteDesde ?? now()->toDateString(),
+                'vigente_hasta' => $vigenteHasta,
+            ]);
+
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'asignar_rol',
+                usuarioSistemaId: $asignadoPor?->id,
+                tallerId: $tallerId,
+                entidad: $asignacion,
+                datos: ['usuario_sistema_id' => $usuario->id, 'rol_id' => $rol->id],
+            );
+
+            return $asignacion;
+        });
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ordenes;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Actions\Inventario\RegistrarMovimientoInventarioAction;
 use App\Actions\Notas\AnularNotaVentaAction;
 use App\Exceptions\BusinessException;
@@ -29,6 +30,9 @@ use Illuminate\Support\Str;
  *    la orden al momento de anularse, en vez de recalcularse a 0 (que además podría violar el CHECK
  *    `descuento <= subtotal_servicios + subtotal_repuestos` si había un descuento aplicado).
  * 5. Inserta historial con el motivo obligatorio.
+ * 6. Audita vía `RegistrarEventoAuditoriaAction` → `auditoria_eventos` (015-plan.md: "anulación
+ *    de orden" está en el catálogo de eventos de negocio) — brecha real: esta Action nunca había
+ *    auditado, `011-plan.md` no definía `auditoria_eventos` porque `015` no existía todavía.
  */
 class AnularOrdenTrabajoAction
 {
@@ -90,6 +94,14 @@ class AnularOrdenTrabajoAction
                 'usuario_sistema_id' => $usuarioSistemaId,
                 'observacion' => $motivo,
             ]);
+
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'anular_orden_trabajo',
+                usuarioSistemaId: $usuarioSistemaId,
+                tallerId: $orden->taller_id,
+                entidad: $orden,
+                datos: ['motivo' => $motivo],
+            );
 
             return $orden->fresh();
         });

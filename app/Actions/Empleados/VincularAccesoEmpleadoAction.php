@@ -2,6 +2,7 @@
 
 namespace App\Actions\Empleados;
 
+use App\Actions\Auditoria\RegistrarEventoAuditoriaAction;
 use App\Actions\Identidad\CrearUsuarioSistemaAction;
 use App\Actions\Roles\AsignarRolAction;
 use App\Exceptions\BusinessException;
@@ -52,11 +53,13 @@ class VincularAccesoEmpleadoAction
 
             $empleado->update(['usuario_sistema_id' => $resultado['usuario']->id]);
 
-            activity()
-                ->causedBy($asignadoPor)
-                ->performedOn($empleado)
-                ->withProperties(['usuario_sistema_id' => $resultado['usuario']->id, 'rol_id' => $rol->id])
-                ->log('acceso_otorgado_empleado');
+            app(RegistrarEventoAuditoriaAction::class)->execute(
+                evento: 'acceso_otorgado_empleado',
+                usuarioSistemaId: $asignadoPor?->id,
+                tallerId: $empleado->taller_id,
+                entidad: $empleado,
+                datos: ['usuario_sistema_id' => $resultado['usuario']->id, 'rol_id' => $rol->id],
+            );
 
             UsuarioCreadoNotification::enviar($resultado['usuario'], $empleado->taller);
 
