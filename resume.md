@@ -528,7 +528,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **013-pagos** (decimoquinta sesión): completo — backend (`metodos_pago`/`pagos`, sin `taller_id` propio en `pagos` — aislamiento vía `nota_venta_id`, sin soft delete — se anula cambiando `estado` —, `MetodoPagoSeeder` con los 4 métodos base), `NotaVenta::recalcularTotales()` (de `012`) extendido para sumar pagos `CONFIRMADO` y derivar `estado` (`PAGADA`/`PENDIENTE`/`EMITIDA`), 2 Actions `RegistrarPagoAction`/`AnularPagoAction` (`lockForUpdate` sobre la nota, `AnularPagoAction` auditada vía `activity()`) y Filament (`PagosRelationManager` en `NotaVentaResource`: modal "Registrar Pago" con `maxValue()`=saldo, acción "Anular pago", gateado explícitamente por `pagos.registrar`/`pagos.anular`). Decisión deliberada: sin `MetodoPagoResource` (el seeder ya deja datos usables, a diferencia de `UnidadMedidaResource` en `010`). 22 tests nuevos + 1 test de `012` actualizado (`NotaVentaTest.php`, ahora usa un `Pago` real en vez de fijar `monto_pagado` a mano).
 - **Total: 481/481 tests Pest verdes** (458 previos + 23 de `013`), `laravel/pint --dirty` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `013-pagos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `{HASH}`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `013-pagos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -584,7 +584,7 @@ El proyecto Laravel ya no es un esqueleto:
 14. ~~Implementar `010-inventario-repuestos`~~ **Hecho** (duodécima sesión, 2026-07-27, commiteado y pusheado en `b7e59be`).
 15. ~~Implementar `011-ordenes-trabajo`~~ **Hecho** (decimotercera sesión, 2026-07-28, commiteado y pusheado en `dbe231e`).
 16. ~~Implementar `012-notas-venta`~~ **Hecho** (decimocuarta sesión, 2026-07-28, commiteado y pusheado en `d5d8f14`). Brecha de integración con `011` resuelta.
-17. ~~Implementar `013-pagos`~~ **Hecho** (decimoquinta sesión, 2026-07-28, commiteado y pusheado en `{HASH}`).
+17. ~~Implementar `013-pagos`~~ **Hecho** (decimoquinta sesión, 2026-07-28, commiteado y pusheado en `e4d14fa`).
 18. Seguir en orden de dependencia: `014-notificaciones` → `015-auditoria`.
 19. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008, 009, 010, 011, 012 y 013**.
 
