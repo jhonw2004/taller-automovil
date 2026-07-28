@@ -3,80 +3,158 @@
 @section('title', 'Inicio')
 
 @section('content')
-    <section class="bg-obsidian text-white">
-        <div class="mx-auto max-w-[1200px] px-16 py-64 sm:px-4 sm:py-80">
-            <h1 class="max-w-2xl text-heading-lg font-semibold sm:text-display">
+    {{-- Hero — 018-modernizacion-ui/spec.md: landing page persuasiva, sin mapa ni buscador embebido.
+         Esa experiencia sigue completa en /talleres/buscar; acá solo hay CTAs hacia ella. --}}
+    <section class="relative overflow-hidden bg-obsidian text-white">
+        <div class="pointer-events-none absolute -right-64 -top-64 h-[320px] w-[320px] rounded-full bg-ember/20 blur-3xl md:h-[480px] md:w-[480px]"></div>
+
+        <div class="relative mx-auto max-w-[1200px] px-16 py-64 sm:px-24 md:py-80 lg:px-16 lg:py-120">
+            <span class="inline-flex items-center gap-8 rounded-pills border border-white/15 bg-white/5 px-16 py-8 text-caption font-medium text-mist">
+                Marketplace de talleres mecánicos en Santa Cruz
+            </span>
+
+            <h1 class="mt-24 max-w-2xl text-heading font-semibold sm:text-heading-lg lg:text-display">
                 Encuentra el taller mecánico ideal en Santa Cruz
             </h1>
             <p class="mt-16 max-w-xl text-body-lg text-mist">
                 Compara talleres cercanos por categoría, calificación y horario. Sin registrarte.
             </p>
 
-            <form action="{{ route('talleres.buscar') }}" method="GET" class="mt-32 flex max-w-xl flex-col gap-12 sm:flex-row">
-                <input
-                    type="text"
-                    name="q"
-                    placeholder="Busca por nombre de taller"
-                    class="w-full rounded-inputs border border-white/20 bg-white/10 px-16 py-12 text-body text-white placeholder:text-mist focus:outline-none focus:ring-2 focus:ring-white/40"
-                >
-                <x-button type="submit" variant="primary" class="!bg-white !text-obsidian hover:!bg-paper">
+            <div class="mt-32 flex flex-col gap-12 sm:flex-row">
+                <x-button :href="route('talleres.buscar')" variant="primary" class="!bg-white !text-obsidian hover:!bg-paper">
                     Buscar talleres
                 </x-button>
-            </form>
-
-            <div class="mt-16">
                 <x-button :href="route('solicitudes.create')" variant="ghost" class="!border-white/30 !bg-transparent !text-white hover:!bg-white/10">
                     Registra tu taller
                 </x-button>
             </div>
-        </div>
-    </section>
 
-    <div class="mx-auto max-w-[1200px] px-16 sm:px-4">
-        @if ($categorias->isNotEmpty())
-            <section class="py-48">
-                <h2 class="text-heading-sm font-semibold text-graphite">Categorías</h2>
-                <div class="mt-24 grid grid-cols-2 gap-16 sm:grid-cols-3 lg:grid-cols-4">
-                    @foreach ($categorias as $categoria)
+            @if ($categorias->isNotEmpty())
+                <div class="mt-32 flex flex-wrap gap-8">
+                    @foreach ($categorias->take(6) as $categoria)
                         <a
                             href="{{ route('talleres.buscar', ['categoria' => $categoria->slug]) }}"
-                            class="rounded-cards border border-cloud bg-white p-20 text-center text-body font-medium text-graphite hover:border-obsidian/40"
+                            class="rounded-pills border border-white/15 px-16 py-8 text-caption text-mist hover:border-white/40 hover:text-white"
                         >
                             {{ $categoria->nombre }}
                         </a>
                     @endforeach
                 </div>
-            </section>
-        @endif
+            @endif
+        </div>
+    </section>
 
-        <section class="border-t border-cloud py-48">
-            <div class="grid grid-cols-1 gap-24 sm:grid-cols-3">
+    {{-- Cómo funciona: propuesta de valor para quien busca un taller. --}}
+    <section class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
+        <h2 class="text-heading-sm font-semibold text-graphite">Cómo funciona</h2>
+        <div class="mt-32 grid grid-cols-1 gap-24 md:grid-cols-3">
+            <div class="rounded-cards border border-cloud bg-white p-28">
+                <span class="text-heading-sm font-semibold text-ash">01</span>
+                <p class="mt-12 text-subheading font-semibold text-graphite">Busca</p>
+                <p class="mt-8 text-body text-fog">Filtra talleres por categoría, nombre o cercanía sin necesidad de crear una cuenta.</p>
+            </div>
+            <div class="rounded-cards border border-cloud bg-white p-28">
+                <span class="text-heading-sm font-semibold text-ash">02</span>
+                <p class="mt-12 text-subheading font-semibold text-graphite">Compara</p>
+                <p class="mt-8 text-body text-fog">Revisa calificaciones, reseñas y horarios reales de cada taller antes de decidir.</p>
+            </div>
+            <div class="rounded-cards border border-cloud bg-white p-28">
+                <span class="text-heading-sm font-semibold text-ash">03</span>
+                <p class="mt-12 text-subheading font-semibold text-graphite">Contacta</p>
+                <p class="mt-8 text-body text-fog">Llega directo al taller que más te convenga, sin intermediarios ni comisiones.</p>
+            </div>
+        </div>
+    </section>
+
+    @if ($categorias->isNotEmpty())
+        <section class="border-t border-cloud bg-paper">
+            <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
+                <h2 class="text-heading-sm font-semibold text-graphite">Categorías</h2>
+                <div class="mt-24 grid grid-cols-2 gap-16 sm:grid-cols-3 lg:grid-cols-4">
+                    @foreach ($categorias as $categoria)
+                        <a
+                            href="{{ route('talleres.buscar', ['categoria' => $categoria->slug]) }}"
+                            class="rounded-cards border border-cloud bg-white p-20 text-center text-body font-medium text-graphite transition hover:border-obsidian/40 hover:shadow-md"
+                        >
+                            {{ $categoria->nombre }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    {{-- Prueba social: estadísticas agregadas ya calculadas por HomeController. --}}
+    <section class="border-t border-cloud bg-white">
+        <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
+            <div class="grid grid-cols-1 gap-32 sm:grid-cols-3">
                 <x-marketplace.stats-block :number="$stats['talleres']" label="Talleres publicados" />
                 <x-marketplace.stats-block :number="$stats['categorias']" label="Categorías" />
                 <x-marketplace.stats-block :number="number_format($stats['calificacionPromedio'], 1)" label="Calificación promedio" />
             </div>
-        </section>
+        </div>
+    </section>
 
-    </div>
-
-    {{-- Breakthrough image (016-ui-design-system/plan.md): separador visual full-bleed. --}}
-    <section class="bg-graphite py-64 text-center text-white">
-        <div class="mx-auto max-w-2xl px-16 sm:px-4">
+    <section class="bg-graphite py-48 text-center text-white md:py-64">
+        <div class="mx-auto max-w-2xl px-16 sm:px-24">
             <p class="text-heading-sm font-semibold">Talleres verificados, cerca de donde estás</p>
             <p class="mt-12 text-body-lg text-mist">
-                Cada taller pasa por una revisión antes de aparecer en el mapa público.
+                Cada taller pasa por una revisión antes de aparecer en el marketplace.
             </p>
         </div>
     </section>
 
-    <div class="mx-auto max-w-[1200px] px-16 sm:px-4">
-        <section class="border-t border-cloud py-48">
-            <h2 class="text-heading-sm font-semibold text-graphite">Talleres cerca de ti</h2>
-            <p class="mt-8 text-body text-fog">Activa tu ubicación o filtra por categoría para encontrar el taller más cercano.</p>
+    {{-- Para dueños de taller: sección persuasiva hacia la solicitud de alta (004-solicitud-alta-taller). --}}
+    <section class="border-t border-cloud bg-paper">
+        <div class="mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-80 lg:px-16">
+            <div class="grid grid-cols-1 gap-40 lg:grid-cols-2 lg:items-center">
+                <div>
+                    <span class="inline-flex items-center rounded-pills border border-cloud bg-white px-16 py-8 text-caption font-medium text-iron">
+                        ¿Tienes un taller mecánico?
+                    </span>
+                    <h2 class="mt-24 text-heading-sm font-semibold text-graphite md:text-heading">
+                        Digitaliza la gestión de tu taller con TallerPro
+                    </h2>
+                    <p class="mt-16 max-w-lg text-body-lg text-fog">
+                        Además de aparecer en el marketplace frente a nuevos clientes, obtienes un sistema completo para administrar tu operación diaria.
+                    </p>
 
-            <div class="mt-24">
-                @include('marketplace.partials.search-experience', ['categorias' => $categorias])
+                    <div class="mt-32">
+                        <x-button :href="route('solicitudes.create')" variant="primary">
+                            Registra tu taller
+                        </x-button>
+                    </div>
+                </div>
+
+                <ul class="grid grid-cols-1 gap-16 sm:grid-cols-2">
+                    @foreach ([
+                        'Clientes y vehículos organizados en un solo lugar',
+                        'Control de inventario y repuestos en tiempo real',
+                        'Órdenes de trabajo con seguimiento por estado',
+                        'Notificaciones automáticas para tu equipo',
+                    ] as $beneficio)
+                        <li class="flex items-start gap-12 rounded-cards border border-cloud bg-white p-20">
+                            <svg class="mt-2 size-20 shrink-0 text-ember" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            <span class="text-body text-graphite">{{ $beneficio }}</span>
+                        </li>
+                    @endforeach
+                </ul>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
+
+    {{-- CTA final. --}}
+    <section class="bg-obsidian py-48 text-center text-white md:py-64">
+        <div class="mx-auto max-w-xl px-16 sm:px-24">
+            <p class="text-heading-sm font-semibold">¿Listo para encontrar tu taller ideal?</p>
+            <p class="mt-12 text-body-lg text-mist">Busca por categoría, calificación o cercanía en segundos.</p>
+            <div class="mt-32 flex justify-center">
+                <x-button :href="route('talleres.buscar')" variant="primary" class="!bg-white !text-obsidian hover:!bg-paper">
+                    Buscar talleres ahora
+                </x-button>
+            </div>
+        </div>
+    </section>
 @endsection

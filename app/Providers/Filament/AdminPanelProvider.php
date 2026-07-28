@@ -34,6 +34,10 @@ class AdminPanelProvider extends PanelProvider
             ->login(Login::class)
             ->authGuard('sistema')
             ->viteTheme('resources/css/filament/admin/theme.css')
+            ->brandName('TallerPro')
+            ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(asset('logo.png'))
             // 014-notificaciones: campana del topbar — el super admin también recibe
             // solicitud.aprobada/rechazada (destinatario: quien procesó la solicitud).
             ->renderHook(

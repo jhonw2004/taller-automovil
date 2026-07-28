@@ -1,6 +1,81 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-28 (vigesimoprimera sesión: botón Registrarse con Google en nav + fix SSL, 568/568 tests verdes, todo commiteado y pusheado). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-28 (vigesimocuarta sesión: `business.md`, commit+push del logo/rebranding, `018-modernizacion-ui` y Home rediseñado, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-28 (vigesimotercera sesión): spec `018-modernizacion-ui` + rediseño del Home (568/568 tests verdes)
+
+El usuario pidió una modernización visual general de todo el proyecto (marketplace + Filament ERP/Admin) sin tocar lógica de negocio ni funcionalidad, con foco especial en responsividad móvil y en que Filament/formularios dejen de verse genéricos. Pidió primero **crear el spec** para todo ese alcance, y luego **implementar solo el Home** como landing page persuasiva (sin mapa ni buscador embebido), con secciones profesionales y un apartado para persuadir a dueños de taller a registrarse.
+
+**Spec nuevo `specs/018-modernizacion-ui/`** (`status: draft`, `depends_on: [016-ui-design-system]`, feature transversal de solo presentación — no toca Actions/Controllers/rutas/migraciones): `spec.md` (criterios de aceptación por área: Home, resto de vistas marketplace, Filament ERP/Admin, formularios/componentes compartidos), `plan.md` (enfoque técnico: qué archivos se tocan por área, decisión de no reescribir `search-experience`/mapa sino reubicarlos), `tasks.md` (checklist atómico por área). Se decidió `status: draft` (no `implemented`) porque el alcance completo del spec cubre varias sesiones futuras (Filament, resto de vistas, componentes) — solo el bloque "Home" de `tasks.md` quedó marcado `[x]` en esta sesión, el resto pendiente explícitamente.
+
+**Home (`resources/views/marketplace/home.blade.php`) reescrito completo** como landing page de varias secciones, todas dentro del layout `marketplace.layouts.app` existente (sin layout paralelo):
+1. **Hero** (`bg-obsidian`, glow decorativo con `blur-3xl`): kicker, headline (se mantuvo literal "Encuentra el taller mecánico ideal en Santa Cruz" por el test `PaginasPublicasTest`), subheadline, dos CTAs (`x-button` primary "Buscar talleres" → `route('talleres.buscar')`, ghost "Registra tu taller" → `route('solicitudes.create')`, ambas rutas ya existentes) + chips de las primeras 6 categorías como accesos rápidos.
+2. **Cómo funciona**: 3 pasos estáticos (Busca/Compara/Contacta) en grid, sin datos de servidor nuevos.
+3. **Categorías** (banda `bg-paper`): mismo bloque de `$categorias` que ya existía, restylado.
+4. **Estadísticas** (banda blanca): mismo `<x-marketplace.stats-block>` con `$stats` que ya existía.
+5. **Banda de confianza** (`bg-graphite`, solo texto — ver nota de `stats-block` abajo).
+6. **Para dueños de taller** (banda `bg-paper`): sección nueva persuasiva — kicker "¿Tienes un taller mecánico?", headline, 4 beneficios en checklist (clientes/vehículos, inventario, órdenes de trabajo, notificaciones — contenido 100% estático, sin nuevas queries) y CTA a `route('solicitudes.create')`.
+7. **CTA final** (`bg-obsidian`): banda corta con un único CTA a la búsqueda.
+
+**Se quitó del Home**: el `<input>` de búsqueda inline y el `@include('marketplace.partials.search-experience')` (mapa Leaflet + filtros + lista). **Nada de esa funcionalidad se eliminó** — sigue intacta y sin cambios en `/talleres/buscar` (`marketplace/search/index.blade.php`), que ya la usaba de forma independiente antes de esta sesión. `HomeController` no se tocó (ya exponía `categorias` y `stats`, suficiente para las 7 secciones).
+
+**Bug real encontrado y corregido en un componente compartido**: `components/marketplace/stats-block.blade.php` no mergeaba `$attributes` en su elemento raíz (a diferencia de `card.blade.php`/`button.blade.php`), así que cualquier `class` pasado desde fuera se perdía silenciosamente — se corrigió agregando `$attributes->merge(...)` (cambio aditivo, no rompe el único uso existente). Al intentar centrar las estadísticas dentro de la banda oscura de confianza se detectó que el componente usa `text-obsidian`/`text-fog` fijos (pensado para fondo claro) — ilegible sobre `bg-graphite`. En vez de forzar colores por props (fuera de alcance de esta sesión, que no debía romper la API de componentes existentes), se optó por mantener las estadísticas en una banda de fondo claro (mismo criterio que la vista original) y dejar la banda oscura de confianza como texto puro sin números.
+
+**Responsividad**: clases mobile-first correctas (`base` → `sm:`(640px) → `md:`(768px) → `lg:`(1024px)) en toda la vista nueva. Se notó (no se corrigió, fuera de alcance de esta sesión — queda para el bloque "resto de vistas" de `018-modernizacion-ui/tasks.md`) que el Home anterior y `nav.blade.php` usan un patrón invertido (`px-16 sm:px-4`, el padding se achica en pantallas más grandes en vez de crecer) — parece un bug preexistente de `016-ui-design-system`, documentado en `tasks.md` para auditoría futura del nav/footer.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes. **568/568 tests verdes** (ningún test se rompió; `PaginasPublicasTest` pasa con las 3 aserciones de contenido conservadas literalmente). `npm run build` sin errores. Smoke test con `php artisan serve` + `curl`: `/` → 200, contiene el headline y la sección "Digitaliza la gestión de tu taller", **no** contiene referencias a Leaflet ni al placeholder del buscador inline viejo (confirmado que se removieron del Home). Verificación visual en navegador real no se hizo (mismo motivo estructural de siempre, `claude-in-chrome` no disponible).
+
+### Qué queda pendiente tras esta sesión
+
+- **Nada commiteado todavía**: spec nuevo (`specs/018-modernizacion-ui/`) + `home.blade.php` + `stats-block.blade.php` en el working tree, sin `git add`/`commit`/`push`, además de lo ya pendiente de la sesión anterior (logo/rebranding).
+
+## Qué se hizo el 2026-07-28 (vigesimocuarta sesión): `business.md` — documento de lógica de negocio + commit+push del working tree (568/568 tests verdes)
+
+El usuario pidió crear un documento `business.md` que describa toda la lógica de negocio del proyecto desde una perspectiva de flujo y dominio (no técnica), para que un agente nuevo pueda entender para qué es la aplicación, quiénes son los usuarios y qué funcionalidades tiene. También pidió añadir la estructura actual de vistas (qué hace cada vista y qué elementos contiene).
+
+**Documento creado:**
+- `business.md`: 9 secciones que cubren: qué es TallerPro, los 5 tipos de usuario (visitante, conductor marketplace, solicitante, empleado sistema, super admin), el marketplace (búsqueda geográfica, reseñas 1 por usuario-taller, favoritos, login Google), solicitud de alta de taller (flujo público multi-paso con máquina de estados), el ERP completo (clientes/vehículos, empleados, servicios, inventario append-only, órdenes de trabajo con 7 estados, notas de venta desde orden o directa, pagos parciales/totales, notificaciones in-app, roles y permisos), super administración, auditoría (3 tablas append-only), reglas de negocio clave (10), y estructura de vistas y componentes del marketplace (layouts, páginas, componentes Blade del design system, componentes de marketplace, Livewire/Filament, tecnología de frontend). Sin detalles técnicos — puro flujo de dominio.
+
+**Commit realizado** (todo el working tree pendiente de sesiones 22, 23 y 24):
+- Logo + rebranding a "TallerPro" en todas las vistas (nav, footer, hero, favicon, Filament brandName/logo/favicon en ambos paneles).
+- Spec `018-modernizacion-ui` con `spec.md`/`plan.md`/`tasks.md`.
+- Home rediseñado como landing page de 7 secciones (hero, cómo funciona, categorías, estadísticas, banda de confianza, sección persuasiva para dueños de taller, CTA final) — sin mapa ni buscador inline (se mudaron a `/talleres/buscar`).
+- Fix de `stats-block.blade.php` (merge de `$attributes`).
+- `business.md` con lógica de negocio completa y estructura de vistas.
+- `resume.md` actualizado.
+
+**568/568 tests verdes**, `vendor/bin/pint --dirty` sin pendientes, todo commiteado y pusheado.
+
+### Qué queda pendiente tras esta sesión
+
+- El resto del alcance de `018-modernizacion-ui` (resto de vistas del marketplace, tema Filament ERP/Admin, refinamiento de `<x-input>`/`<x-select>`/`<x-button>`/`<x-card>`) queda explícitamente pendiente — ver checklist sin marcar en `specs/018-modernizacion-ui/tasks.md`.
+- Auditoría del patrón de padding invertido (`sm:px-4` más chico que el padding base) en `nav.blade.php`/`footer.blade.php` y otras vistas heredadas de `016`: detectado, no corregido (fuera del alcance de "solo Home" de esta sesión).
+- Verificación visual en navegador real: no se hizo (ver arriba).
+
+## Qué se hizo el 2026-07-28 (vigesimosegunda sesión): logo del proyecto + rebranding a "TallerPro" (568/568 tests verdes)
+
+El usuario dejó `public/logo.png` (1024×1024, PNG con fondo tipo "glow" difuminado no transparente, ícono de pin+llave con el texto "TallerPro" incrustado) sin trackear y pidió incorporarlo como logo del proyecto en todas las vistas que lo necesiten, sin romper estilos.
+
+**Decisión de marca (preguntada al usuario, no asumida)**: el logo trae "TallerPro" incrustado, pero el proyecto usaba "TallerAutomóviles" en nav/footer/`<title>`. El usuario eligió **rebrandear todo a "TallerPro"** en vez de recortar el logo o dejar ambos nombres conviviendo.
+
+**Frontend (marketplace):**
+- `resources/views/marketplace/layouts/{app,auth,guest}.blade.php`: `<title>` default cambiado a "TallerPro" + `<link rel="icon" type="image/png" href="{{ asset('logo.png') }}">` agregado en los 3 (favicon explícito, reemplaza el `favicon.ico` implícito de Laravel que no estaba enlazado en ningún lado).
+- `resources/views/components/marketplace/nav.blade.php`: el link de marca pasó de texto plano "TallerAutomóviles" a `<img>` (h-40 w-40 `rounded-icons` — ese token del design system es 40px de radio, que sobre una caja de 40×40 da un círculo perfecto, lo que recorta las esquinas del fondo "glow" cuadrado sin necesidad de editar el PNG) + texto "TallerPro" en la tipografía propia del sitio (no se depende del texto incrustado en la imagen, ilegible a ese tamaño).
+- `resources/views/components/marketplace/footer.blade.php`: mismo patrón ícono circular (h-32) + "TallerPro", y el copyright actualizado a "TallerPro".
+- `resources/views/marketplace/home.blade.php`: agregado un kicker (ícono h-48 + "TallerPro" en `text-mist`) sobre el `<h1>` del hero oscuro (`bg-obsidian`), sin tocar el resto de la sección (buscador, CTA "Registra tu taller", categorías, stats, etc.).
+
+**Filament (`/erp` y `/admin`)**: `AdminPanelProvider`/`ErpPanelProvider` — `->brandName('TallerPro')`, `->brandLogo(asset('logo.png'))`, `->brandLogoHeight('2.5rem')`, `->favicon(asset('logo.png'))` (API verificada con Context7 contra la documentación real de Filament antes de usarla). Antes de esta sesión ningún panel tenía `brandName` seteado, así que Filament mostraba el texto por defecto de `config('app.name')` ("Laravel", nunca corregido en `.env`) — bug preexistente cerrado como efecto colateral, sin tocar `.env`/`config/app.php` (fuera de alcance explícito pedido por el usuario).
+
+**Decisión deliberada de no recortar el PNG con CSS `object-position`/`background-position`**: sin herramientas de edición de imagen disponibles en el entorno (`magick`/`convert` de ImageMagick, `python3`+Pillow: ninguno instalado) y sin `claude-in-chrome` disponible para verificar visualmente el resultado (mismo motivo estructural documentado en sesiones anteriores — el usuario, al invocar el skill, indicó continuar sin herramientas de navegador), cualquier recorte a puro ojo hubiera sido un riesgo real de que el ícono quedara mal encuadrado sin forma de comprobarlo. Se optó por la imagen completa + máscara circular (`rounded-icons`), que es robusta ante cualquier composición interna del PNG.
+
+**Verificación realizada** (sin navegador real): `php artisan serve` + `curl` — HTML de `/` contiene las 4 apariciones del logo (favicon, nav, hero, footer) con las rutas correctas; `GET /logo.png` → 200; `/erp` y `/admin` → 302 (no 500, sin sesión). `npm run build` sin errores. `vendor/bin/pint --test` sin pendientes en los 2 `PanelProvider` tocados. **568/568 tests verdes** (ningún test dependía del texto "TallerAutomóviles", así que el rebranding no rompió cobertura existente).
+
+### Qué queda pendiente tras esta sesión
+
+- **Nada commiteado todavía**: cambios de código + `public/logo.png` en el working tree, sin `git add`/`commit`/`push` (a la espera de confirmación del usuario).
+- **`public/logo.png` pesa ~1.4 MB** sin optimizar (no hay `pngquant`/`cwebp`/`sharp` disponibles en este entorno para comprimirlo) — candidato a optimización futura si el peso de página importa, pero no es un error funcional.
+- Verificación visual en navegador real: no se hizo (mismo motivo estructural de todas las sesiones anteriores, esta vez confirmado explícitamente por el usuario al no completar la instalación de la extensión de Chrome).
+- `config('app.name')`/`.env` (`APP_NAME=Laravel`) deliberadamente no tocado — el usuario pidió explícitamente no modificar `.env` ni relacionados.
 
 ## Qué se hizo el 2026-07-28 (decimonovena sesión): auditoría de consistencia de todo el proyecto + limpieza (568/568 tests verdes)
 
@@ -712,6 +787,9 @@ El proyecto Laravel ya no es un esqueleto:
 21. ~~Auditoría de consistencia de todo el proyecto + corrección de brechas documentales y de código~~ **Hecho** (decimonovena sesión: FK de reseña, conteo hijas activas, seeders, factories, tests faltantes, desactivación por taller, corrección de `tasks.md`/specs en todas las features, 568/568 tests).
 22. ~~Commit + push de la auditoría de consistencia~~ **Hecho** (vigésima sesión, commit `55047a5` en `origin/specs/planificacion`).
 23. ~~Botón Registrarse con Google en nav + fix SSL~~ **Hecho** (vigesimoprimera sesión, commit `aa05f29`).
+24. ~~Logo + rebranding a "TallerPro"~~ **Hecho** (vigesimosegunda sesión, código implementado).
+25. ~~Spec `018-modernizacion-ui` + rediseño del Home~~ **Hecho** (vigesimotercera sesión, código implementado).
+26. ~~`business.md` con lógica de negocio y estructura de vistas~~ **Hecho** (vigesimocuarta sesión).
 
 **MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs están en `status: implemented` con 568/568 tests verdes y todo commiteado/pusheado en `origin/specs/planificacion`.
 

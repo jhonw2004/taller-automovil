@@ -4,8 +4,9 @@
 
 <header class="sticky top-0 z-40 border-b border-cloud bg-white/90 backdrop-blur">
     <div class="mx-auto flex max-w-[1200px] items-center justify-between gap-16 px-16 py-16 sm:px-4">
-        <a href="{{ route('home') }}" class="text-subheading font-semibold text-obsidian">
-            TallerAutomóviles
+        <a href="{{ route('home') }}" class="flex items-center gap-12 text-subheading font-semibold text-obsidian">
+            <img src="{{ asset('logo.png') }}" alt="TallerPro" class="h-40 w-40 rounded-icons object-cover">
+            TallerPro
         </a>
 
         <nav class="hidden items-center gap-24 text-body text-graphite sm:flex">

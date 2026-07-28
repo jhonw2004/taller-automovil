@@ -42,6 +42,10 @@ class ErpPanelProvider extends PanelProvider
             )
             ->login(Login::class)
             ->authGuard('sistema')
+            ->brandName('TallerPro')
+            ->brandLogo(asset('logo.png'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(asset('logo.png'))
             ->font('DM Sans')
             // Paleta Awesomic — misma paleta que AdminPanelProvider, ver notas ahí.
             ->colors([
