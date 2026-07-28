@@ -1,6 +1,6 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-27 (duodécima sesión: 010-inventario-repuestos). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-27 (duodécima sesión: 010-inventario-repuestos completado, commiteado y pusheado). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
 
 ## Qué se hizo el 2026-07-27 (duodécima sesión): 010-inventario-repuestos completo (343/343 tests verdes)
 
@@ -30,7 +30,7 @@ Siguiendo el orden estricto de `AGENTS.md` (paso 7, sigue a `009-catalogo-servic
 - **Notificación real de stock bajo**: el evento `StockBajoDetectado` se dispara pero no tiene listener — el consumidor es `014-notificaciones`, no implementada.
 - Órdenes de compra a proveedor y múltiples almacenes: fuera de alcance del MVP según el propio `spec.md`.
 - Verificación en BD de desarrollo real y en navegador: no se hizo en esta sesión (ver arriba).
-- **Código de `010` commiteado y pusheado en `{hash}` en `origin/specs/planificacion`.**
+- **Código de `010` commiteado y pusheado en `b7e59be` en `origin/specs/planificacion`.**
 
 ## Qué se hizo el 2026-07-26 (undécima sesión): 009-catalogo-servicios completo (287/287 tests verdes)
 
@@ -444,7 +444,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **010-inventario-repuestos** (duodécima sesión): completo — backend (`repuestos`/`unidades_medida`/`proveedores`/`repuestos_proveedores`/`inventario_movimientos`, modelos con mutators de normalización `''`→`null`, `RegistrarMovimientoInventarioAction` con `lockForUpdate`/protección de doble salida, evento `StockBajoDetectado` sin listener) y Filament (`RepuestoResource` con acción "Ajustar Stock", `ProveedorResource` con la primera `RelationManager` N:M del proyecto, `MovimientoInventarioResource` de solo lectura, `UnidadMedidaResource` en `/admin` — extensión no listada en `plan.md` pero necesaria para que `unidad_medida_id` tenga datos). Bug real encontrado por tests: `Proveedor` sin `$table` explícito pluralizaba mal a "proveedors". 56 tests nuevos.
 - **Total: 343/343 tests Pest verdes** (287 previos + 56 de `010`), `laravel/pint --dirty` sin pendientes sobre archivos tocados en la sesión de `010` (deuda de pint preexistente sin relación en `Login.php`/`AdminPanelProvider.php`/`ErpPanelProvider.php`, no tocada).
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `010-inventario-repuestos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `{hash}`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código hasta `010-inventario-repuestos` inclusive está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -497,7 +497,7 @@ El proyecto Laravel ya no es un esqueleto:
 11. ~~Hotfix login Filament (email → username)~~ **Hecho** (`4da1c16`).
 12. ~~Hotfix CheckSessionExpiration (string → Carbon::parse)~~ **Hecho** (`a126403`).
 13. ~~Implementar `009-catalogo-servicios`~~ **Hecho** (undécima sesión, commiteado y pusheado en `76a1e7a`). Además se reemplazó el README.md default de Laravel por uno propio del proyecto (instalación, configuración, paneles, tests).
-14. ~~Implementar `010-inventario-repuestos`~~ **Hecho** (duodécima sesión, 2026-07-27, commiteado y pusheado en `{hash}`).
+14. ~~Implementar `010-inventario-repuestos`~~ **Hecho** (duodécima sesión, 2026-07-27, commiteado y pusheado en `b7e59be`).
 15. Seguir en orden de dependencia: `011-ordenes-trabajo` → `012`…`015`.
 16. ~~Al completar una feature con código + tests que cubran sus criterios de aceptación **y su UI**, actualizar `status: implemented`~~ **Hecho para 001, 002, 003, 004, 005, 016, 006, 007, 008, 009 y 010** (010 marcado en la duodécima sesión, sin commitear).
 
