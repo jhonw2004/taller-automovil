@@ -1,6 +1,6 @@
 ---
 id: 011-ordenes-trabajo
-status: draft
+status: implemented
 depends_on: [007-clientes-vehiculos, 008-empleados-usuarios-erp, 009-catalogo-servicios, 010-inventario-repuestos]
 resumen: "Documento operativo central del taller: cliente+vehículo+líneas de servicio/repuesto con máquina de estados y totales transaccionales."
 ---

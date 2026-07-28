@@ -55,6 +55,11 @@ class Cliente extends Model
         return $this->hasMany(Vehiculo::class);
     }
 
+    public function ordenesTrabajo(): HasMany
+    {
+        return $this->hasMany(OrdenTrabajo::class);
+    }
+
     /**
      * Un cliente inactivo no puede seleccionarse para una orden/nota nueva (007-spec.md); el
      * consumidor real de este scope llega recién en `011-ordenes-trabajo`/`012-notas-venta`.

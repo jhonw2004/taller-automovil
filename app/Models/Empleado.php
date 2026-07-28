@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Empleado extends Model
@@ -42,6 +43,11 @@ class Empleado extends Model
     public function tieneAcceso(): bool
     {
         return $this->usuario_sistema_id !== null;
+    }
+
+    public function ordenesAsignadas(): HasMany
+    {
+        return $this->hasMany(OrdenTrabajo::class, 'empleado_asignado_id');
     }
 
     /**

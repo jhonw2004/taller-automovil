@@ -3,7 +3,9 @@
 use App\Actions\Inventario\RegistrarMovimientoInventarioAction;
 use App\Events\StockBajoDetectado;
 use App\Exceptions\BusinessException;
+use App\Models\Cliente;
 use App\Models\InventarioMovimiento;
+use App\Models\OrdenTrabajo;
 use App\Models\Repuesto;
 use App\Models\Taller;
 use Illuminate\Database\QueryException;
@@ -19,6 +21,26 @@ function repuestoConStock(float $stockActual, float $stockMinimo = 0): Repuesto
         'stock_actual' => $stockActual,
         'stock_minimo' => $stockMinimo,
     ]);
+}
+
+/**
+ * `orden_trabajo_repuesto_id` tiene FK real desde `011-ordenes-trabajo` (antes de esa feature era
+ * un entero arbitrario sin FK, ver comentario histórico en la migración de `inventario_movimientos`)
+ * — estos tests necesitan una fila real de `ordenes_trabajo_repuestos` para poder referenciarla.
+ */
+function lineaRepuestoParaMovimiento(Repuesto $repuesto): int
+{
+    $cliente = Cliente::factory()->create(['taller_id' => $repuesto->taller_id]);
+    $orden = OrdenTrabajo::factory()->create(['taller_id' => $repuesto->taller_id, 'cliente_id' => $cliente->id]);
+
+    return $orden->lineasRepuestos()->create([
+        'repuesto_id' => $repuesto->id,
+        'cantidad' => 1,
+        'precio_unitario' => 0,
+        'descuento' => 0,
+        'subtotal' => 0,
+        'estado' => 'PENDIENTE',
+    ])->id;
 }
 
 it('ENTRADA suma al stock y guarda stock_anterior/stock_resultante correctos', function () {
@@ -92,29 +114,32 @@ it('rechaza un tipo de movimiento invalido', function () {
 
 it('nunca genera doble SALIDA para la misma linea de orden (orden_trabajo_repuesto_id)', function () {
     $repuesto = repuestoConStock(20);
+    $lineaId = lineaRepuestoParaMovimiento($repuesto);
 
     app(RegistrarMovimientoInventarioAction::class)->execute(
         $repuesto,
         'SALIDA',
         1,
-        ordenTrabajoRepuestoId: 999,
+        ordenTrabajoRepuestoId: $lineaId,
     );
 
     expect(fn () => app(RegistrarMovimientoInventarioAction::class)->execute(
         $repuesto,
         'SALIDA',
         1,
-        ordenTrabajoRepuestoId: 999,
+        ordenTrabajoRepuestoId: $lineaId,
     ))->toThrow(BusinessException::class);
 
-    expect(InventarioMovimiento::where('orden_trabajo_repuesto_id', 999)->count())->toBe(1);
+    expect(InventarioMovimiento::where('orden_trabajo_repuesto_id', $lineaId)->count())->toBe(1);
 });
 
 it('permite SALIDA de distintas lineas de orden para el mismo repuesto', function () {
     $repuesto = repuestoConStock(20);
+    $linea1 = lineaRepuestoParaMovimiento($repuesto);
+    $linea2 = lineaRepuestoParaMovimiento($repuesto);
 
-    app(RegistrarMovimientoInventarioAction::class)->execute($repuesto, 'SALIDA', 1, ordenTrabajoRepuestoId: 1);
-    app(RegistrarMovimientoInventarioAction::class)->execute($repuesto, 'SALIDA', 1, ordenTrabajoRepuestoId: 2);
+    app(RegistrarMovimientoInventarioAction::class)->execute($repuesto, 'SALIDA', 1, ordenTrabajoRepuestoId: $linea1);
+    app(RegistrarMovimientoInventarioAction::class)->execute($repuesto, 'SALIDA', 1, ordenTrabajoRepuestoId: $linea2);
 
     expect(InventarioMovimiento::where('repuesto_id', $repuesto->id)->count())->toBe(2);
 });
