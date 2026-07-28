@@ -35,18 +35,29 @@ class UsuarioResource extends Resource
 
     protected static ?string $slug = 'usuarios';
 
+    /**
+     * Muestra cualquier usuario con **alguna** asignación a este taller, activa o no — no solo las
+     * vigentes: si se filtrara por `activo=true`, un usuario recién desactivado desaparecería de
+     * la tabla y el botón "Activar" (que depende de verlo listado) sería inalcanzable.
+     */
     public static function getEloquentQuery(): Builder
     {
         $tallerId = session('taller_activo_id');
-        $hoy = now()->toDateString();
 
         return parent::getEloquentQuery()
-            ->whereHas('asignacionesRol', function (Builder $query) use ($tallerId, $hoy) {
-                $query->where('taller_id', $tallerId)
-                    ->where('activo', true)
-                    ->where('vigente_desde', '<=', $hoy)
-                    ->where(fn (Builder $q) => $q->whereNull('vigente_hasta')->orWhere('vigente_hasta', '>=', $hoy));
-            });
+            ->whereHas('asignacionesRol', fn (Builder $query) => $query->where('taller_id', $tallerId));
+    }
+
+    /**
+     * Acceso vigente del usuario **a este taller específico** — no `UsuarioSistema.activo`
+     * (global, ver `ActivarDesactivarUsuarioSistemaAction`).
+     */
+    protected static function activoEnTallerActivo(UsuarioSistema $record): bool
+    {
+        return $record->asignacionesRol()
+            ->where('taller_id', session('taller_activo_id'))
+            ->where('activo', true)
+            ->exists();
     }
 
     protected static function tienePermiso(string $slug): bool
@@ -92,7 +103,10 @@ class UsuarioResource extends Resource
                         ->map(fn ($asignacion) => $asignacion->rol->nombre)
                         ->implode(', ')),
                 TextColumn::make('ultimo_acceso_at')->label('Último acceso')->dateTime()->placeholder('Nunca'),
-                IconColumn::make('activo')->boolean(),
+                IconColumn::make('activo_en_taller')
+                    ->label('Activo en este taller')
+                    ->boolean()
+                    ->state(fn (UsuarioSistema $record) => static::activoEnTallerActivo($record)),
             ])
             ->recordActions([
                 RecordAction::make('restablecer_password')
@@ -118,12 +132,14 @@ class UsuarioResource extends Resource
                             ->send();
                     }),
                 RecordAction::make('desactivar')
+                    ->label('Desactivar en este taller')
                     ->color('danger')
-                    ->visible(fn (UsuarioSistema $record) => $record->activo && static::tienePermiso('usuarios.gestionar'))
+                    ->visible(fn (UsuarioSistema $record) => static::activoEnTallerActivo($record) && static::tienePermiso('usuarios.gestionar'))
                     ->requiresConfirmation()
                     ->action(fn (UsuarioSistema $record) => static::cambiarActivo($record, false)),
                 RecordAction::make('activar')
-                    ->visible(fn (UsuarioSistema $record) => ! $record->activo && static::tienePermiso('usuarios.gestionar'))
+                    ->label('Activar en este taller')
+                    ->visible(fn (UsuarioSistema $record) => ! static::activoEnTallerActivo($record) && static::tienePermiso('usuarios.gestionar'))
                     ->requiresConfirmation()
                     ->action(fn (UsuarioSistema $record) => static::cambiarActivo($record, true)),
             ])

@@ -7,13 +7,13 @@
 - [x] `.env`: `QUEUE_CONNECTION=database` — ya estaba seteado. Tabla `jobs`/`job_batches`/`failed_jobs` — **ya viene migrada por defecto en el skeleton de Laravel 13** (`0001_01_01_000002_create_jobs_table.php`), no hizo falta `php artisan queue:table`.
 
 ## Seeding
-- [ ] Migración del catálogo de permisos (60 permisos desde `002-roles-permisos/plan.md`).
-- [ ] Seeder `UnidadMedidaSeeder` (unidad, litro, metro, kilo).
-- [ ] Seeder `MetodoPagoSeeder` (efectivo, tarjeta, QR, transferencia).
-- [ ] Seeder `CategoriaTallerSeeder` (mecánica general, electricidad, neumáticos, diagnóstico, tuning, hojalatería).
-- [ ] Seeder `RolSistemaSeeder` (8 roles + mapping de permisos según tabla en plan.md).
-- [ ] Seeder `SuperAdminSeeder` (username `superadmin`, password temporal, solo visible en consola).
-- [ ] Todos los seeds son idempotentes (`firstOrCreate`).
+- [x] Migración del catálogo de permisos: 64 permisos seedeados vía `PermisoSeeder` (implementado en la sesión de `002-roles-permisos`, ver `resume.md` tercera sesión).
+- [x] Seeder `UnidadMedidaSeeder` (unidad, litro, metro, kilo) — faltaba, agregado en la sesión de auditoría/limpieza (registrado en `DatabaseSeeder`).
+- [x] Seeder `MetodoPagoSeeder` (efectivo, tarjeta, QR, transferencia) — implementado en la sesión de `013-pagos`.
+- [x] Seeder `CategoriaSeeder` (mecánica general, electricidad, neumáticos, diagnóstico, tuning, hojalatería) — faltaba, agregado en la sesión de auditoría/limpieza (registrado en `DatabaseSeeder`).
+- [x] Seeder `RolSistemaSeeder` (9 roles + mapping de permisos) — implementado en la sesión de `002-roles-permisos`.
+- [x] Seeder `SuperAdminSeeder` (username `superadmin`, password temporal, solo visible en consola) — implementado en la sesión de `002-roles-permisos`.
+- [x] Todos los seeds son idempotentes (`updateOrCreate`/`firstOrCreate`), verificado con tests dedicados (`MetodoPagoSeeder`/`UnidadMedidaSeeder`/`CategoriaSeeder` corridos dos veces en el mismo test).
 
 ## Instalación de paquetes
 
@@ -25,6 +25,9 @@
 - [x] `npm install leaflet @fontsource/dm-sans` (Tailwind v4 no necesita `@tailwindcss/forms` — Preflight lo maneja)
 - [x] `php artisan vendor:publish --tag=permission-config --force` + `--tag=permission-migrations --force` (spatie/laravel-permission v7 usa `spatie/laravel-package-tools`; el tag real es `permission-*`, no el nombre del provider)
 - [x] `php artisan vendor:publish --tag=activitylog-config --force` + `--tag=activitylog-migrations --force` (mismo motivo: tag `activitylog-*`)
+
+**Nota (ambos paquetes, removidos después):** `spatie/laravel-permission` fue removido por completo en la sesión de `002-roles-permisos` (roles/permisos 100% custom) y `spatie/laravel-activitylog` fue removido por completo en la sesión de `015-auditoria` (auditoría 100% tablas propias append-only). Los dos puntos de arriba documentan lo que se instaló en su momento — ninguno de los dos paquetes queda en `composer.json` hoy.
+
 - [x] Extensión PHP `intl` habilitada en `php.ini` (requerida por Filament v5, estaba deshabilitada en el sistema)
 - [x] `php artisan filament:install --panels` + `php artisan make:filament-panel erp` — paneles `AdminPanelProvider` y `ErpPanelProvider` creados y registrados en `bootstrap/providers.php`
 - [x] Smoke test manual (`class_exists`) de las 9 clases críticas de los paquetes instalados: todas presentes
@@ -41,37 +44,37 @@
 - [x] Widget `TenantSwitcher` en panel ERP (`canView()` solo si el usuario tiene >1 taller vigente).
 - [x] Middleware `SetTallerActivo` (`app/Http/Middleware/SetTallerActivo.php`), registrado solo en `ErpPanelProvider`.
 - [x] Middleware `ForzarCambioPasswordMiddleware` (nuevo, no estaba en el plan original) + páginas `CambiarPassword` en ambos paneles — resuelve el pendiente de `001-identidad-autenticacion` ("pantalla de cambio de contraseña obligatorio").
-- [ ] "Crear recursos base para cada panel (dashboard, sidebar skeleton)" — el dashboard default de Filament se deja tal cual; los Resources reales de cada feature (002/003 en esta sesión, 007+ después) son los que pueblan el sidebar.
+- [x] ~~"Crear recursos base para cada panel (dashboard, sidebar skeleton)"~~ **No hizo falta código nuevo**: el dashboard default de Filament se deja tal cual; los Resources reales de cada feature (002/003 en su sesión, 007-015 después) son los que pueblan el sidebar.
 
 ## Multi-tenant: BelongsToTaller
 - [x] Trait `App\Traits\BelongsToTaller` con global scope + auto-fill `taller_id` en creating (`app/Traits/BelongsToTaller.php`)
 - [x] Scope `App\Models\Scopes\BelongsToTallerScope` (`app/Models/Scopes/BelongsToTallerScope.php`)
-- [x] Método `sinScope()` con auditoría de `withoutGlobalScope` (usa el helper `activity()` de spatie/laravel-activitylog)
+- [x] Método `sinScope()` con auditoría de `withoutGlobalScope`. **Actualizado**: usaba el helper `activity()` de `spatie/laravel-activitylog`, removido por completo en `015-auditoria` — ahora usa `RegistrarEventoAuditoriaAction` (tabla propia `auditoria_eventos`, evento `sin_global_scope`). Primer consumidor real: `Taller::contarEntidadesHijasActivas()` (advertencia de soft-delete en `TallerResource`, ver `003-gestion-talleres/tasks.md`).
 - [x] Middleware `SetTallerActivo` que setea `taller_activo_id` en sesión (usa `asignacionesVigentes()`, no `setPermissionsTeamId()` — ver nota arriba)
 - [x] ~~Redirección con mensaje si usuario no tiene acceso a ningún taller~~ **No hizo falta código nuevo**: `Filament\Http\Middleware\Authenticate` (registrado antes en `authMiddleware()`) ya deniega con 403 vía `canAccessPanel()` antes de que `SetTallerActivo` se ejecute — ver comentario en el middleware.
-- [ ] Tests Pest: usuario taller A no ve datos del taller B, creación auto-asigna `taller_id`, sinScope queda auditado — requieren un modelo real con el trait aplicado; se escribirán junto con la primera feature que lo use (`007-clientes-vehiculos` en adelante, ningún modelo real lo usa todavía)
+- [x] Tests Pest: usuario taller A no ve datos del taller B, creación auto-asigna `taller_id`, sinScope queda auditado — implementados junto con `007-clientes-vehiculos` en adelante (`ClienteTest.php`, `RepuestoTest.php`, etc.) y `tests/Feature/Talleres/SoftDeleteCascadaTest.php`/`ContarEntidadesHijasActivasTest.php` para `sinScope()`.
 
 ## Generación concurrente de códigos
 - [x] Action `App\Actions\SequentialCodeGenerator` con `FOR UPDATE` + reintentos (`app/Actions/SequentialCodeGenerator.php`). Se corrigió un bug del plan original: el parámetro `$retries` no se usaba (la llamada a `DB::transaction()` tenía `5` hardcodeado); ahora sí se respeta.
-- [ ] Tests Pest: concurrencia simulada (2 procesos simultáneos) genera códigos distintos, deadlock se reintenta — requiere una tabla real con columna `codigo`/`taller_id`; se escribirá junto con la primera feature que lo consuma (`011-ordenes-trabajo` o `012-notas-venta`)
+- [x] Tests Pest: `tests/Feature/Sistema/SequentialCodeGeneratorTest.php` — códigos únicos y estrictamente secuenciales al persistir en ráfaga, sin colisión entre talleres distintos, reinicio de numeración por taller. **Nota**: no simula concurrencia multi-proceso real (`RefreshDatabase` envuelve cada test en una transacción no comprometida entre procesos, ver docblock del test) — la garantía de exclusión mutua bajo concurrencia real la da `lockForUpdate()` + transacción de Postgres, ya usada por el generador.
 
 ## Rutas API y Web
-- [ ] Crear `routes/api.php` con grupos de rutas para búsqueda, reseñas, favoritos — los controladores referenciados (`TallerBusquedaApiController`, etc.) pertenecen a `005`/`006`, no existen todavía. No tiene sentido crear las rutas antes que los controllers.
-- [ ] Crear `routes/web.php` con rutas del marketplace — mismo motivo, depende de `001`/`005`.
-- [ ] Verificar que `RouteServiceProvider` o `bootstrap/app.php` cargan `routes/api.php`
+- [x] `routes/api.php` con grupos de rutas para búsqueda (`005`), reseñas/favoritos (`006`) — implementado en esas sesiones.
+- [x] `routes/web.php` con rutas del marketplace — implementado junto con `001`/`005`/`006`.
+- [x] Verificado: `bootstrap/app.php` carga `web: routes/web.php` y `api: routes/api.php` explícitamente (Laravel 11+ no usa `RouteServiceProvider`).
 
 ## Helpers PostGIS
 - [x] Trait `App\Traits\HasGeolocation` con: boot (sincroniza geom en saving), `scopeCercanoA`, `scopeConDistanciaA` (`app/Traits/HasGeolocation.php`). Corregido el plan original: usa `sprintf('%F', ...)` en vez de interpolar `{$model->lon}` directamente (evita problemas de locale con separador decimal).
 - [x] Cast `App\Casts\GeometryCast` (WKB/WKT ↔ lat/lon) (`app/Casts/GeometryCast.php`). El plan original no traía código para este cast — se implementó decodificando EWKB hexadecimal (little-endian, Point con SRID) manualmente. **Verificado contra PostGIS real**, no solo revisado a ojo: round-trip `get()`/`set()` con `ST_AsHexEWKB`/`ST_SetSRID(ST_MakePoint(...))` da el resultado exacto.
 
 ## Migración de reemplazo de talleres
-- [ ] Crear migración `2026_08_01_000001_replace_talleres_table.php` que dropea la tabla prototipo y crea la nueva con todas las columnas del spec 003
-- [ ] Crear migraciones para `categorias`, `talleres_categorias`, `talleres_horarios`
-- [ ] Verificar que `php artisan migrate:fresh` ejecuta sin errores
+- [x] Migración de reemplazo real: `2026_07_26_060001_replace_talleres_table.php` (nombre distinto al placeholder de este plan, implementado en la sesión de `003-gestion-talleres`) — dropea la tabla prototipo y recrea con todas las columnas del spec 003, incluida la reconstrucción de las FK de `roles`/`asignaciones_rol`.
+- [x] Migraciones `categorias`, `talleres_categorias`, `talleres_horarios` — implementadas en la misma sesión de `003`.
+- [x] Verificado: `php artisan migrate`/`migrate:fresh` ejecutan sin errores contra `taller_test` y contra la BD de desarrollo real (corrido en cada sesión desde entonces).
 
 ## Tests Pest generales
-- [ ] Instalación: todos los paquetes están disponibles (test de humo: `assertTrue(class_exists(...))` para cada paquete crítico)
-- [ ] Panel `/admin` carga para SUPER_ADMIN, da 403 para otros roles
-- [ ] Panel `/erp` carga para usuario con rol activo en un taller
-- [ ] Tenant Switcher aparece si usuario tiene múltiples talleres
-- [ ] Código secuencial no colisiona bajo concurrencia simulada
+- [x] Instalación: `class_exists()` de las 9 clases críticas verificado manualmente en la sesión de instalación (ver `plan.md` §1) — sin test Pest dedicado (era un smoke test de una sola vez, no un criterio recurrente que valga la pena repetir en cada corrida de la suite).
+- [x] Panel `/admin` carga para SUPER_ADMIN, da 403 para otros — `tests/Feature/Roles/ResourcesAutorizacionTest.php` y equivalentes en cada feature con Resources en `/admin`.
+- [x] Panel `/erp` carga para usuario con rol activo en un taller — `tests/Feature/Sistema/SetTallerActivoMiddlewareTest.php` y los `ResourcesAutorizacionTest.php` de cada feature `007+`.
+- [x] Tenant Switcher aparece si usuario tiene múltiples talleres — `tests/Feature/Sistema/TenantSwitcherTest.php` (faltaba, agregado en la sesión de auditoría/limpieza).
+- [x] Código secuencial no colisiona — `tests/Feature/Sistema/SequentialCodeGeneratorTest.php` (faltaba, agregado en la misma sesión; ver nota sobre concurrencia real arriba).

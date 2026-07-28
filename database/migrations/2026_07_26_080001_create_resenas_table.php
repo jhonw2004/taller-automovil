@@ -14,8 +14,9 @@ return new class extends Migration
             $table->foreignId('usuario_marketplace_id')->constrained('usuarios_marketplace');
             $table->foreignId('taller_id')->constrained('talleres');
             // `ordenes_trabajo` no existe todavia (011-ordenes-trabajo, spec posterior en el orden
-            // del proyecto) — se agrega la columna sin FK por ahora; 011 debe agregarla cuando
-            // exista la tabla (constraint ya prevista en 006-resenas-favoritos/plan.md).
+            // del proyecto) — se agrega la columna sin FK por ahora. La FK real se agrega en
+            // `2026_07_28_180001_add_orden_trabajo_foreign_to_resenas_table.php`, una vez que
+            // `011-ordenes-trabajo` crea la tabla referenciada.
             $table->unsignedBigInteger('orden_trabajo_id')->nullable();
             $table->smallInteger('calificacion');
             $table->text('comentario')->nullable();

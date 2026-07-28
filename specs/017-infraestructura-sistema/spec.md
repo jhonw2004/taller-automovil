@@ -1,6 +1,6 @@
 ---
 id: 017-infraestructura-sistema
-status: draft
+status: implemented
 depends_on: []
 resumen: "Configuración global del proyecto: instalación de paquetes, paneles Filament, trait multi-tenant BelongsToTaller, generación concurrente de códigos, registro de rutas API, helpers de PostGIS."
 ---

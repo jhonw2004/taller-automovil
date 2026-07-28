@@ -25,10 +25,10 @@
 - [x] Form Request `App\Http\Requests\Sistema\CambiarPasswordRequest` con `Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()`.
 - [x] Comprobación de expiración: `ReiniciarIntentosFallidosListener` fuerza `debe_cambiar_password = true` en cada login si `password_expires_at` ya pasó.
 - [x] Reutilización de contraseña + historial: implementado en `App\Actions\Identidad\CambiarPasswordAction`, **no** vía listener de `Illuminate\Auth\Events\PasswordReset` como sugería el plan original — ese evento pertenece al flujo de recuperación por email de Laravel, que no existe en este proyecto (sin tabla `password_reset_tokens`, fuera de alcance del MVP). El cambio de contraseña es siempre iniciado por el propio usuario autenticado, así que se resolvió directamente en la Action. Recorta el historial a las últimas 5 filas por usuario.
-- [x] `throttle:5,1` en login: **ya lo cubre Filament v5 nativamente** (ver sección anterior), no hace falta middleware de ruta. `throttle:3,1` en cambio de contraseña: pendiente — depende de la página/Livewire component de cambio de contraseña, que aún no se construyó (ver ítem de abajo).
+- [x] `throttle:5,1` en login: **ya lo cubre Filament v5 nativamente** (ver sección anterior), no hace falta middleware de ruta. `throttle:3,1` en cambio de contraseña: **resuelto en la quinta sesión** — rate limit propio (`WithRateLimiting`, `3/1min`) en las páginas `CambiarPassword` de ambos paneles (ver ítem de abajo).
 - [x] Middleware `App\Http\Middleware\CheckSessionExpiration` con redirección (`Filament::getPanel('erp')->getLoginUrl()`) y flash message "Sesión expirada por inactividad". Registrado en `authMiddleware()` de ambos PanelProviders.
 - [x] Separación de guards: no requiere middleware/gate adicional — `web` y `sistema` son guards de sesión completamente independientes (providers distintos, sin tabla compartida); un usuario autenticado en uno es sencillamente anónimo para el otro. Verificado con las rutas ya wireadas (`auth:web` en marketplace, `authGuard('sistema')` en paneles Filament).
-- [ ] Pantalla/flujo de cambio de contraseña obligatorio (primer login + expirada) — es una página/Livewire component de Filament (bloquear navegación mientras `debe_cambiar_password = true`), trabajo de UI que no se abordó en esta sesión (backend — `CambiarPasswordAction` — listo para que la UI lo consuma).
+- [x] Pantalla/flujo de cambio de contraseña obligatorio (primer login + expirada) — **resuelto en la quinta sesión** (`017-infraestructura-sistema`): `App\Http\Middleware\ForzarCambioPasswordMiddleware` + páginas `CambiarPassword` en ambos paneles, reutilizando `CambiarPasswordAction`.
 
 **Todo lo de esta sección y la anterior fue verificado funcionalmente contra la base de datos real** (transacciones con rollback), no solo revisado a ojo: idempotencia de login OAuth, bloqueo tras 5 intentos fallidos y su reset en login exitoso, rechazo de contraseña repetida/reciente con recorte de historial a 5, y generación de contraseña temporal que cumple la política.
 
@@ -36,7 +36,7 @@
 - [ ] `APP_DEBUG=false` forzado en producción — es un check de CI/deploy, no hay pipeline configurado todavía en este proyecto.
 - [ ] `composer audit` configurado en CI — ídem, no hay CI configurado todavía.
 - [x] Validación de `redirect` URL en Socialite contra lista blanca — no aplica tal como está implementado: `GoogleAuthController` no acepta ningún parámetro `redirect` controlado por el usuario, la URL de callback está fija en `GOOGLE_REDIRECT_URI` (server-side, whitelisted en Google Cloud Console). No hay superficie de ataque de open-redirect que mitigar.
-- [ ] Signed routes para enlaces de desbloqueo y acciones críticas — no hay todavía ninguna pantalla/Resource que emita esos enlaces (pertenece a la UI de gestión de usuarios de `002`/`008`).
+- [x] ~~Signed routes para enlaces de desbloqueo y acciones críticas~~ **No aplicó**: `008-empleados-usuarios-erp` (`RestablecerPasswordUsuarioAction`/`ActivarDesactivarUsuarioSistemaAction`) resolvió "desbloqueo"/gestión crítica como acciones de Filament autenticadas dentro del panel `/erp`, no como enlaces públicos por email — no hay superficie de signed routes que construir porque nunca hubo un enlace público que firmar.
 
 ## Tests Pest
 

@@ -44,32 +44,51 @@ it('RestablecerPasswordUsuarioAction: rechaza si el usuario no pertenece al tall
 });
 
 // --- ActivarDesactivarUsuarioSistemaAction ---
+//
+// Desactivar/activar opera sobre `asignaciones_rol.activo` (por taller), no sobre
+// `UsuarioSistema.activo` (global) — un usuario desactivado en un taller sigue pudiendo
+// autenticarse (el guard no lo rechaza, `UsuarioSistemaProvider` solo mira `activo` global),
+// pero pierde acceso al panel `/erp` de ESE taller específico si era su único taller vigente.
 
-it('ActivarDesactivarUsuarioSistemaAction: desactiva y el usuario desactivado no puede iniciar sesion', function () {
+it('ActivarDesactivarUsuarioSistemaAction: desactiva y el usuario pierde acceso al erp de ese taller', function () {
     $taller = Taller::factory()->create();
     $usuario = usuarioAsignadoAlTaller($taller->id, ['username' => 'empleado.activo']);
     CredencialSistema::factory()->for($usuario, 'usuarioSistema')->create();
 
-    expect(auth('sistema')->attempt(['username' => 'empleado.activo', 'password' => 'Password123!']))->toBeTrue();
-    auth('sistema')->logout();
+    $this->actingAs($usuario, 'sistema')->get('/erp')->assertSuccessful();
 
     app(ActivarDesactivarUsuarioSistemaAction::class)->execute($usuario, $taller->id, false);
 
-    expect($usuario->fresh()->activo)->toBeFalse();
-    expect(auth('sistema')->attempt(['username' => 'empleado.activo', 'password' => 'Password123!']))->toBeFalse();
+    expect($usuario->fresh()->activo)->toBeTrue(); // el global no se toca
+    $this->actingAs($usuario->fresh(), 'sistema')->get('/erp')->assertForbidden();
 });
 
-it('ActivarDesactivarUsuarioSistemaAction: reactiva un usuario y vuelve a poder iniciar sesion', function () {
+it('ActivarDesactivarUsuarioSistemaAction: reactiva y el usuario recupera acceso al erp de ese taller', function () {
     $taller = Taller::factory()->create();
     $usuario = usuarioAsignadoAlTaller($taller->id, ['username' => 'empleado.reactivado']);
     CredencialSistema::factory()->for($usuario, 'usuarioSistema')->create();
-    $usuario->update(['activo' => false]);
+    app(ActivarDesactivarUsuarioSistemaAction::class)->execute($usuario, $taller->id, false);
 
-    expect(auth('sistema')->attempt(['username' => 'empleado.reactivado', 'password' => 'Password123!']))->toBeFalse();
+    $this->actingAs($usuario->fresh(), 'sistema')->get('/erp')->assertForbidden();
 
     app(ActivarDesactivarUsuarioSistemaAction::class)->execute($usuario, $taller->id, true);
 
-    expect(auth('sistema')->attempt(['username' => 'empleado.reactivado', 'password' => 'Password123!']))->toBeTrue();
+    $this->actingAs($usuario->fresh(), 'sistema')->get('/erp')->assertSuccessful();
+});
+
+it('ActivarDesactivarUsuarioSistemaAction: desactivar en un taller no afecta el acceso a otro taller del mismo usuario', function () {
+    $tallerA = Taller::factory()->create();
+    $tallerB = Taller::factory()->create();
+    $usuario = usuarioAsignadoAlTaller($tallerA->id, ['username' => 'empleado.multitaller']);
+    $rolB = Rol::factory()->create(['taller_id' => null]);
+    app(AsignarRolAction::class)->execute($usuario, $rolB, $tallerB->id, asignadoPor: null);
+    CredencialSistema::factory()->for($usuario, 'usuarioSistema')->create();
+
+    app(ActivarDesactivarUsuarioSistemaAction::class)->execute($usuario, $tallerA->id, false);
+
+    session(['taller_activo_id' => $tallerB->id]);
+    $this->actingAs($usuario->fresh(), 'sistema')->get('/erp')->assertSuccessful();
+    expect($usuario->fresh()->asignacionesVigentes()->pluck('taller_id')->all())->toBe([$tallerB->id]);
 });
 
 it('ActivarDesactivarUsuarioSistemaAction: rechaza si el usuario no pertenece al taller', function () {

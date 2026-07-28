@@ -141,14 +141,25 @@ class TallerResource extends Resource
 
                         Notification::make()->success()->title('Propietario actualizado.')->send();
                     }),
-                // Advertencia genérica antes de soft-delete (003-gestion-talleres/spec.md: la
-                // operación no se bloquea aunque haya entidades hijas activas, solo se advierte).
-                // Sin conteo real de hijas: ningún modelo real usa BelongsToTaller todavía (llega
-                // en 007+), así que el texto es estático hasta entonces.
+                // Advertencia con conteo real antes de soft-delete (003-gestion-talleres/spec.md:
+                // la operación no se bloquea aunque haya entidades hijas activas, solo se advierte).
                 DeleteAction::make()
-                    ->modalDescription('Este taller puede tener clientes, vehículos, órdenes u otros datos asociados. No se bloqueará la eliminación, pero esos datos quedarán ocultos del ERP hasta que se restaure el taller.'),
+                    ->modalDescription(fn (Taller $record) => static::describirEntidadesHijas($record)),
                 RestoreAction::make(),
             ]);
+    }
+
+    protected static function describirEntidadesHijas(Taller $record): string
+    {
+        $conteos = collect($record->contarEntidadesHijasActivas())->filter(fn (int $cantidad) => $cantidad > 0);
+
+        if ($conteos->isEmpty()) {
+            return 'Este taller no tiene entidades hijas activas registradas. No se bloqueará la eliminación de todos modos.';
+        }
+
+        $detalle = $conteos->map(fn (int $cantidad, string $etiqueta) => "{$cantidad} {$etiqueta}")->implode(', ');
+
+        return "Este taller tiene: {$detalle}. No se bloqueará la eliminación, pero esos datos quedarán ocultos del ERP hasta que se restaure el taller.";
     }
 
     protected static function cambiarEstado(Taller $record, string $nuevoEstado): void

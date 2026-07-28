@@ -37,6 +37,8 @@ El orden de implementación es **estricto** y está definido por `depends_on`. N
 | `016-ui-design-system` | Los componentes Blade se crean junto con las vistas de `005-marketplace-busqueda-perfil` y `006-resenas-favoritos`. No tiene implementación propia independiente. |
 | `017-infraestructura-sistema` | Se implementa primero y completo. Todo lo demás depende de esto. |
 
+**Nota sobre `depends_on`:** `017-infraestructura-sistema` es prerequisito implícito de las 16 features restantes (instala paquetes, paneles Filament, `BelongsToTaller`, PostGIS) pero **deliberadamente no aparece en el `depends_on` de ninguna**, porque no es una dependencia de negocio dentro del DAG de features — es infraestructura transversal asumida por todas, igual que `016-ui-design-system` no aparece como dependencia de cada vista Blade que consume sus componentes. No es un olvido; no agregues `017`/`016` al `depends_on` de otras specs para "completar" la cadena.
+
 ## Si un spec está en `status: draft`
 
 No está aprobado para implementación directa.

@@ -18,8 +18,10 @@
 
 ## Implementación
 
-- `spatie/laravel-activitylog` para auditoría genérica de modelos (`logsOnly()`/`logOnlyDirty()`) alimentando `auditoria_eventos` — trait `LogsActivity` en `Taller`, `Cliente`, `Vehiculo`, `OrdenTrabajo`, `NotaVenta`, `Pago`, etc., con `$logAttributes` explícitos y `$logOnlyDirty = true`.
-- `auditoria_talleres` requiere Observer propio (`TallerObserver`) porque Spatie Activitylog no maneja PostGIS nativamente (necesita capturar `geom_old`/`geom_new`).
-- `auditoria_accesos` alimentada por listeners de eventos nativos de autenticación de Laravel (`Login`, `Logout`, `Failed`, `PasswordReset`), ver `001-identidad-autenticacion`.
-- `filament/spatie-laravel-activitylog-plugin`: Resource de solo lectura en `/admin` (todos los eventos) y en `/erp` (eventos del taller activo, si el usuario tiene permiso).
-- Ningún modelo de auditoría expone métodos `update`/`delete` a nivel de aplicación (forzar append-only también en código, no solo en BD).
+**Nota (implementación real, difiere del plan original de abajo):** este plan originalmente proponía `spatie/laravel-activitylog` como motor genérico de `auditoria_eventos`. Se descartó por completo durante la implementación: el helper `activity()` no puede modelar el CHECK "a lo sumo un actor" (marketplace o sistema, o ninguno) ni el bloqueo de `update()`/`delete()` a nivel de código que exige `tasks.md`. Se implementó en su lugar con **Actions propias** (`RegistrarEventoAuditoriaAction`/`RegistrarAccesoAuditoriaAction`) escribiendo directo a las tablas de abajo, y `spatie/laravel-activitylog` fue removido por completo del proyecto (`composer remove`, tabla `activity_log` dropeada). El texto siguiente queda como referencia histórica del plan original:
+
+- ~~`spatie/laravel-activitylog` para auditoría genérica de modelos (`logsOnly()`/`logOnlyDirty()`) alimentando `auditoria_eventos` — trait `LogsActivity` en `Taller`, `Cliente`, `Vehiculo`, `OrdenTrabajo`, `NotaVenta`, `Pago`, etc., con `$logAttributes` explícitos y `$logOnlyDirty = true`.~~ Reemplazado por `RegistrarEventoAuditoriaAction`, invocada explícitamente desde cada Action/Observer de origen.
+- `auditoria_talleres` requiere Observer propio (`TallerObserver`) porque ni Spatie Activitylog ni ningún otro helper genérico maneja PostGIS nativamente (necesita capturar `geom_old`/`geom_new`).
+- `auditoria_accesos` alimentada por listeners de eventos nativos de autenticación de Laravel (`Login`, `Logout`, `Failed`) + `CambiarPasswordAction` directo para `PASSWORD_CHANGE`, ver `001-identidad-autenticacion`.
+- ~~`filament/spatie-laravel-activitylog-plugin`: Resource de solo lectura...~~ Reemplazado por 6 Resources Filament propios (uno por tabla × panel), sin ningún plugin de Spatie.
+- Ningún modelo de auditoría expone métodos `update`/`delete` a nivel de aplicación (forzar append-only también en código, no solo en BD) — implementado vía override de `save()`/`delete()` que lanzan `BusinessException`.

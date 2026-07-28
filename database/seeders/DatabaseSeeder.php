@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             RolSistemaSeeder::class,
             SuperAdminSeeder::class,
             MetodoPagoSeeder::class,
+            UnidadMedidaSeeder::class,
+            CategoriaSeeder::class,
         ]);
     }
 }

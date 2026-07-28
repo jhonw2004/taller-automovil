@@ -118,6 +118,31 @@ class Taller extends Model
     }
 
     /**
+     * Conteo real de entidades hijas activas para la advertencia de soft-delete
+     * (003-gestion-talleres/spec.md: "no bloquea, pero advierte"). Envuelto en `Cliente::sinScope()`
+     * — primer consumidor real de ese método (017-infraestructura-sistema/spec.md ya documentaba
+     * este caso exacto: "Super Admin que necesita acceder a datos de un taller específico...
+     * la acción queda registrada en auditoría"). No es estrictamente necesario para ver los datos
+     * desde `/admin` (no hay `taller_activo_id` en sesión ahí), pero es la semántica correcta y dado
+     * que el propio spec pide auditar este tipo de acceso cross-tenant del Super Admin.
+     *
+     * @return array<string, int>
+     */
+    public function contarEntidadesHijasActivas(): array
+    {
+        return Cliente::sinScope(fn () => [
+            'Clientes' => Cliente::where('taller_id', $this->id)->activos()->count(),
+            'Vehículos' => Vehiculo::where('taller_id', $this->id)->activos()->count(),
+            'Empleados' => Empleado::where('taller_id', $this->id)->activos()->count(),
+            'Repuestos' => Repuesto::where('taller_id', $this->id)->activos()->count(),
+            'Proveedores' => Proveedor::where('taller_id', $this->id)->activos()->count(),
+            'Servicios de catálogo' => ServicioCatalogo::where('taller_id', $this->id)->activos()->count(),
+            'Órdenes de trabajo activas' => OrdenTrabajo::where('taller_id', $this->id)->where('estado', '!=', 'ANULADA')->count(),
+            'Notas de venta activas' => NotaVenta::where('taller_id', $this->id)->where('estado', '!=', 'ANULADA')->count(),
+        ]);
+    }
+
+    /**
      * Formato JSON de `GET /api/talleres/search` (005-marketplace-busqueda-perfil/plan.md).
      * `distancia_km` solo se resuelve si el query agregó la columna `distancia` vía
      * `ST_DistanceSphere` (selectRaw), ausente cuando la búsqueda no envía lat/lon.

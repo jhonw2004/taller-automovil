@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\GeometryCast;
 use App\Exceptions\BusinessException;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class AuditoriaTaller extends Model
 {
+    use HasFactory;
+
     const UPDATED_AT = null;
 
     protected $table = 'auditoria_talleres';

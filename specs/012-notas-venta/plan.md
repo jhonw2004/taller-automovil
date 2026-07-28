@@ -16,7 +16,7 @@
 ## Implementación
 
 - Modelo `NotaVenta` (`BelongsToTaller`), código vía `GenerarCodigoNota` (mismo patrón que `GenerarCodigoOrden` de `011-ordenes-trabajo`, formato `NV-YYYY-###`).
-- Action `CrearNotaVentaDesdeOrden` (transacción): copia líneas de la orden completada, calcula totales, valida regla de "una nota activa por orden" (parametrizable — ver punto pendiente de confirmación en `spec.md`).
+- Action `CrearNotaVentaDesdeOrden` (transacción): copia líneas de la orden completada, calcula totales. **Decisión ya resuelta** (2026-07-25, ver `resume.md`): múltiples notas activas por orden están permitidas (regla permisiva, sin bloqueo de unicidad) — no hay restricción de "una nota activa por orden" que parametrizar.
 - Action `CrearNotaVentaDirecta` (venta sin orden): líneas pueden generar salida de inventario propia vía `010-inventario-repuestos`, validando que la línea no provenga ya de una orden que descontó stock.
 - Método `NotaVenta::recalcularTotales()` invocado en la misma transacción que cualquier alta/baja/edición de línea o de pago (el recálculo por pagos vive en `013-pagos`).
 - Action `AnularNotaVenta` ejecuta en una **sola transacción DB**:
