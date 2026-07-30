@@ -29,7 +29,7 @@
 
 ## Resto de vistas marketplace
 
-- [ ] Auditar y ajustar `search/index.blade.php` en los 3 breakpoints.
+- [ ] ~~Auditar y ajustar `search/index.blade.php` en los 3 breakpoints~~ — absorbido por `019-mapa-busqueda-ux` (rediseño completo de esa vista, no solo auditoría de breakpoints), agregada 2026-07-29.
 - [ ] Auditar y ajustar `workshops/show.blade.php` en los 3 breakpoints.
 - [ ] Auditar y ajustar `dashboard/index.blade.php` en los 3 breakpoints.
 - [ ] Auditar y ajustar `components/marketplace/nav.blade.php` en los 3 breakpoints (incluye el bug de padding invertido pendiente, ver arriba).

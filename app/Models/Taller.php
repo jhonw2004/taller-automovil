@@ -154,6 +154,8 @@ class Taller extends Model
             'nombre' => $this->nombre,
             'slug' => $this->slug,
             'descripcion_corta' => $this->descripcion ? Str::limit($this->descripcion, 120) : null,
+            'logo_url' => $this->logo_url,
+            'direccion' => $this->direccion,
             'lat' => $this->lat,
             'lon' => $this->lon,
             'calificacion_promedio' => (float) $this->calificacion_promedio,

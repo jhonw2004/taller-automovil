@@ -8,26 +8,31 @@
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-paper font-cosmica text-graphite antialiased">
+@php($layoutVariant = trim($__env->yieldContent('layout_variant')))
+<body class="bg-paper font-cosmica text-graphite antialiased @if ($layoutVariant === 'app-shell') flex h-dvh flex-col overflow-hidden @endif">
     <x-marketplace.toast-container />
     <x-marketplace.nav />
 
-    @if (session('status'))
-        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
-            <x-alert type="success">{{ session('status') }}</x-alert>
-        </div>
-    @endif
+    @unless ($layoutVariant === 'app-shell')
+        @if (session('status'))
+            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+                <x-alert type="success">{{ session('status') }}</x-alert>
+            </div>
+        @endif
 
-    @if (session('error'))
-        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
-            <x-alert type="error">{{ session('error') }}</x-alert>
-        </div>
-    @endif
+        @if (session('error'))
+            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+                <x-alert type="error">{{ session('error') }}</x-alert>
+            </div>
+        @endif
+    @endunless
 
-    <main>
+    <main class="@if ($layoutVariant === 'app-shell') min-h-0 flex-1 @endif">
         @yield('content')
     </main>
 
-    <x-marketplace.footer />
+    @unless ($layoutVariant === 'app-shell')
+        <x-marketplace.footer />
+    @endunless
 </body>
 </html>

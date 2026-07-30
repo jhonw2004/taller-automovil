@@ -143,3 +143,151 @@
         animation: none;
     }
 }
+
+/**
+ * Mapa de búsqueda (019-mapa-busqueda-ux). `.taller-marker` quita el fondo/borde por defecto que
+ * Leaflet aplica a `L.divIcon` para que solo se vea el SVG del pin propio (`map.js`).
+ */
+.taller-marker {
+    background: transparent;
+    border: none;
+}
+
+/**
+ * Card flotante de detalle: sobreescribe el estilo por defecto (blanco plano, sin sombra propia)
+ * del popup de Leaflet para que se vea como una card del design system (016), no como un popup
+ * genérico. El contenido interno (`popoverHtml()` en `map.js`) usa las clases `taller-popover-*`.
+ */
+.taller-popover .leaflet-popup-content-wrapper {
+    padding: 0;
+    border-radius: var(--radius-cards);
+    box-shadow: var(--shadow-md), 0 1px 0 0 var(--color-cloud);
+}
+.taller-popover .leaflet-popup-content {
+    margin: 0;
+    width: 300px !important;
+}
+.taller-popover .leaflet-popup-tip {
+    box-shadow: var(--shadow-md);
+}
+
+.taller-popover-card {
+    position: relative;
+    padding: 20px;
+    font-family: var(--font-cosmica);
+}
+.taller-popover-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-pills);
+    color: var(--color-fog);
+    font-size: 20px;
+    line-height: 1;
+}
+.taller-popover-close:hover {
+    background: var(--color-paper);
+    color: var(--color-obsidian);
+}
+.taller-popover-nombre {
+    padding-right: 24px;
+    font-size: var(--text-subheading);
+    font-weight: 600;
+    color: var(--color-graphite);
+}
+.taller-popover-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+.taller-popover-badge {
+    border: 1px solid var(--color-cloud);
+    border-radius: var(--radius-badges);
+    background: var(--color-paper);
+    padding: 3px 8px;
+    font-size: var(--text-caption);
+    color: var(--color-iron);
+}
+.taller-popover-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: var(--text-caption);
+    color: var(--color-fog);
+}
+.taller-popover-estado {
+    border-radius: var(--radius-badges);
+    border: 1px solid transparent;
+    padding: 3px 8px;
+    font-weight: 500;
+}
+.taller-popover-estado--abierto {
+    border-color: #10b981;
+    color: #047857;
+    background: #ecfdf5;
+}
+.taller-popover-estado--cerrado {
+    border-color: var(--color-cloud);
+    color: var(--color-iron);
+    background: var(--color-paper);
+}
+.taller-popover-direccion {
+    margin-top: 8px;
+    font-size: var(--text-caption);
+    color: var(--color-fog);
+}
+.taller-popover-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+}
+.taller-popover-distancia {
+    font-size: var(--text-caption);
+    color: var(--color-fog);
+}
+.taller-popover-link {
+    font-size: var(--text-caption);
+    font-weight: 600;
+    color: var(--color-obsidian);
+}
+.taller-popover-link:hover {
+    color: var(--color-ember);
+}
+
+/**
+ * Atribución OSM discreta (019-mapa-busqueda-ux): requisito de licencia de los tiles, nunca se
+ * elimina del DOM, solo se reduce visualmente. El autocrédito "Leaflet" ya no se agrega
+ * (`prefix: false` en `map.js`), así que este control solo contiene el copyright de OSM.
+ */
+.leaflet-control-attribution {
+    font-size: 10px !important;
+    opacity: 0.55;
+    transition: opacity 0.2s ease;
+}
+.leaflet-control-attribution:hover,
+.leaflet-control-attribution:focus-within {
+    opacity: 1;
+}
+
+/**
+ * Hoja inferior de filtros/resultados en móvil (019-mapa-busqueda-ux): 3 estados controlados por
+ * `x-data="{ sheet: 'peek' | 'half' | 'full' }"` en `map-experience.blade.php`.
+ */
+.map-sheet {
+    transition: height 0.3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+    .map-sheet {
+        transition: none;
+    }
+}

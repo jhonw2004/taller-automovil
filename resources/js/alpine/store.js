@@ -19,6 +19,15 @@ export function registerSearchStore(Alpine) {
         loading: false,
         error: null,
         hasSearched: false,
+        selected: null,
+
+        select(tallerId) {
+            this.selected = this.selected === tallerId ? null : tallerId;
+        },
+
+        selectedTaller() {
+            return this.results.find((taller) => taller.id === this.selected) ?? null;
+        },
 
         async search() {
             this.loading = true;
@@ -48,6 +57,10 @@ export function registerSearchStore(Alpine) {
                 const payload = await response.json();
                 this.results = payload.data ?? [];
                 this.total = payload.meta?.total ?? this.results.length;
+
+                if (this.selected !== null && ! this.results.some((taller) => taller.id === this.selected)) {
+                    this.selected = null;
+                }
             } catch (error) {
                 this.error = error.message ?? 'Ocurrió un error al buscar talleres.';
                 this.results = [];

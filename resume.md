@@ -1,8 +1,35 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-29 (vigesimoséptima sesión: commit+push, seed de categorías, Taller Carrillo desde GeoJSON, usuario admin del taller, cambio password superadmin, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-29 (vigesimoctava sesión: spec `019-mapa-busqueda-ux` + rediseño completo de búsqueda tipo Google Maps, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
 
-## Qué se hizo el 2026-07-29 (vigesimoséptima sesión): seed de categorías, Taller Carrillo desde GeoJSON, usuario admin del taller, cambio password superadmin, commit+push (568/568 tests verdes)
+## Qué se hizo el 2026-07-29 (vigesimoctava sesión): spec `019-mapa-busqueda-ux` + rediseño completo de búsqueda tipo Google Maps (568/568 tests verdes)
+
+Rediseño completo de `/talleres/buscar` transformándola de layout tradicional (scroll vertical, mapa como recuadro de 420px, resultados en columna lateral) a experiencia inmersiva **"mapa primero"** tipo Google Maps, usando Leaflet/OpenStreetMap. Sin modificar lógica de negocio, modelos, rutas ni API — solo UI/UX.
+
+**Spec nuevo `specs/019-mapa-busqueda-ux/`** (`status: draft`, `depends_on: [005-marketplace-busqueda-perfil, 018-modernizacion-ui]`): spec.md (criterios de aceptación), plan.md (layout app-shell, 4 capas superpuestas, marcadores propios, card flotante, controles propios), tasks.md (60 tareas atómicas, ninguna marcada aún). Absorbe la tarea pendiente de `018` ("auditar search/index.blade.php en 3 breakpoints") — marcada como absorbida en `018/tasks.md`.
+
+### Archivos modificados (9):
+
+- **`resources/views/marketplace/search/index.blade.php`**: migrado de `search-experience` a `map-experience` con `@section('layout_variant', 'app-shell')`.
+- **`resources/views/marketplace/layouts/app.blade.php`**: variante opt-in `app-shell` — body `flex h-dvh flex-col overflow-hidden`, main `min-h-0 flex-1`, omite banners y footer. Comportamiento por defecto idéntico.
+- **`resources/views/components/marketplace/map.blade.php`**: slot opt-in `$controls` — botones de zoom (+/−) y ubicación propios en el mapa.
+- **`resources/js/alpine/components/map.js`**: marcadores propios con `L.divIcon` (SVG inline, paleta `016`: graphite normal, ember seleccionado), `markersById` en vez de array plano, `syncSelection()` con panTo + popup, `highlightMarker()` para hover, controles zoomIn/zoomOut/locate propios, atribución OSM sin autocrédito Leaflet.
+- **`resources/js/alpine/store.js`**: estado `selected` (id del taller seleccionado), método `select()` con toggle, getter `selectedTaller()`, reseteo al cambiar filtros.
+- **`resources/css/app.css`** (+148 líneas): estilos para marcadores, popup Leaflet sobreescrito, card flotante completa, atribución OSM con opacidad reducida, hoja inferior móvil con 3 estados (peek/half/full) y `prefers-reduced-motion`.
+- **`app/Models/Taller.php`**: `toSearchJsonResponse()` ahora incluye `logo_url` y `direccion` (columnas existentes desde `003`).
+- **`specs/018-modernizacion-ui/tasks.md`**: tarea de auditoría marcada como absorbida por `019`.
+
+### Archivos nuevos (3):
+
+- **`resources/views/marketplace/search/map-experience.blade.php`** (114 líneas): contenedor con 4 capas superpuestas (mapa, drawer desktop colapsable, hoja inferior móvil con 3 estados, card flotante).
+- **`resources/views/marketplace/search/_results-list.blade.php`** (65 líneas): lista compartida para drawer y hoja móvil, con Alpine store select + hover, skeletons, empty state.
+- **`resources/views/components/marketplace/taller-popover-content.blade.php`** (49 líneas): card flotante móvil con Alpine reactivo.
+
+### Archivos eliminados (1):
+
+- **`resources/views/marketplace/partials/search-experience.blade.php`**: sin consumidores tras la migración.
+
+**Verificación**: 568/568 tests verdes (sin cambios en lógica de negocio). Smoke test no realizado (mismo motivo estructural).
 
 El usuario pidió crear un taller visible en el mapa usando datos reales de `storage/app/taller_automoviles.geojson`, con todos los datos completos. También pidió las credenciales de acceso al panel ERP del taller, y cambiar la contraseña del superadmin (no se conocía porque se genera aleatoriamente al seedear). Finalmente pidió commit+push y actualización de `resume.md`.
 
