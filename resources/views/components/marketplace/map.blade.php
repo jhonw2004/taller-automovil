@@ -6,10 +6,18 @@
     'controlsBottomClass' => 'bottom-24',
 ])
 
+{{--
+    `z-0`: Leaflet define z-index internos altos para sus panes/controles propios (hasta 1000,
+    ver leaflet.css `.leaflet-top`/`.leaflet-bottom`). Sin un z-index explícito aquí, este `relative`
+    no crea su propio stacking context, así que esos z-index internos "se escapan" y compiten
+    directo con hermanos externos (drawer/chips/hoja de `map-experience.blade.php`, todos z-20),
+    renderizando el mapa por encima de la UI de búsqueda. `z-0` contiene todo lo interno del mapa
+    en su propio stacking context, para que los z-index externos (>0) siempre ganen.
+--}}
 <div
     x-data="map({ lat: {{ $center['lat'] }}, lon: {{ $center['lon'] }} }, {{ $zoom }})"
     x-init="init()"
-    class="relative {{ $height }} w-full overflow-hidden {{ $controls ? '' : 'rounded-cards border border-cloud' }}"
+    class="relative z-0 {{ $height }} w-full overflow-hidden {{ $controls ? '' : 'rounded-cards border border-cloud' }}"
 >
     <div x-ref="container" class="size-full" role="application" aria-label="Mapa de talleres"></div>
 

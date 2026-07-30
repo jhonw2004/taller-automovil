@@ -4,6 +4,11 @@
     consumidores y se elimina, ver `git log` de esta sesión). El mapa ocupa el 100% del
     contenedor (provisto por el layout `app-shell` de `marketplace/layouts/app.blade.php`);
     filtros, lista y detalle flotan sobre él.
+
+    El panel de escritorio es un sidebar acoplado al borde izquierdo (no una tarjeta flotante):
+    ocupa el 100% del alto disponible, sin esquinas redondeadas, con un único borde derecho que lo
+    separa del mapa (feedback del usuario: nada de "chips"/tags de filtro, nada de bordes
+    redondeados, debe verse y comportarse como un sidebar real).
 --}}
 @php($categorias = $categorias ?? [])
 
@@ -13,8 +18,8 @@
         <x-marketplace.map height="h-full" :controls="true" controls-bottom-class="bottom-[104px] md:bottom-24" />
     </div>
 
-    {{-- Capa 2: drawer de filtros/resultados (desktop/tablet) --}}
-    <div x-data="{ expanded: true }" class="pointer-events-none absolute inset-y-16 left-16 z-20 hidden md:block">
+    {{-- Capa 2: sidebar de filtros/resultados (desktop/tablet), acoplado al borde izquierdo --}}
+    <div x-data="{ expanded: true }" class="absolute inset-y-0 left-0 z-20 hidden h-full md:block">
         <div
             x-show="expanded"
             x-transition:enter="transition ease-out duration-200"
@@ -23,29 +28,29 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-x-0"
             x-transition:leave-end="opacity-0 -translate-x-4"
-            class="pointer-events-auto flex h-full w-[360px] max-w-[90vw] flex-col overflow-hidden rounded-cards border border-cloud bg-white shadow-lg"
+            class="flex h-full w-[380px] max-w-full flex-col overflow-hidden border-r border-cloud bg-white"
         >
-            <div class="shrink-0 border-b border-cloud p-20">
-                <div class="flex items-center justify-between gap-8">
-                    <h1 class="text-subheading font-semibold text-graphite">Buscar talleres</h1>
-                    <button
-                        type="button"
-                        x-on:click="expanded = false"
-                        aria-label="Ocultar panel de filtros"
-                        class="flex size-32 shrink-0 items-center justify-center rounded-buttons text-fog hover:bg-paper hover:text-obsidian"
-                    >
-                        <svg class="size-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"></path>
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="mt-16">
-                    <x-marketplace.search-filters :categorias="$categorias" />
-                </div>
+            <div class="flex shrink-0 items-center justify-between gap-8 border-b border-cloud p-20">
+                <h1 class="text-subheading font-semibold text-graphite">Buscar talleres</h1>
+                <button
+                    type="button"
+                    x-on:click="expanded = false"
+                    aria-label="Ocultar panel de filtros"
+                    class="flex size-32 shrink-0 items-center justify-center text-fog hover:bg-paper hover:text-obsidian"
+                >
+                    <svg class="size-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 6l-6 6 6 6"></path>
+                    </svg>
+                </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-20">
+            <div class="shrink-0 border-b border-cloud p-20">
+                <x-marketplace.search-filters :categorias="$categorias" />
+            </div>
+
+            {{-- `min-h-0` es necesario para que este panel respete `flex-1` y sea ESTE el que
+                 scrollea (con muchos resultados) en vez de crecer y desbordar todo el sidebar. --}}
+            <div class="min-h-0 flex-1 overflow-y-auto p-20">
                 <p x-show="!$store.search.loading && $store.search.results.length > 0" class="mb-12 text-caption text-fog">
                     <span x-text="$store.search.total"></span> talleres encontrados
                 </p>
@@ -59,7 +64,7 @@
             x-show="!expanded"
             x-on:click="expanded = true"
             aria-label="Mostrar panel de filtros"
-            class="pointer-events-auto flex size-48 items-center justify-center rounded-buttons border border-cloud bg-white text-obsidian shadow-lg hover:bg-paper"
+            class="flex size-48 items-center justify-center border border-cloud bg-white text-obsidian shadow-lg hover:bg-paper"
         >
             <svg class="size-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 6l6 6-6 6"></path>
@@ -74,7 +79,7 @@
         class="absolute inset-x-0 bottom-0 z-20 md:hidden"
     >
         <div
-            class="map-sheet flex flex-col overflow-hidden rounded-t-cards border-t border-cloud bg-white shadow-lg"
+            class="map-sheet flex flex-col overflow-hidden border-t border-cloud bg-white shadow-lg"
             :class="{ 'h-[104px]': sheet === 'peek', 'h-1/2': sheet === 'half', 'h-[calc(100%-56px)]': sheet === 'full' }"
         >
             <button
@@ -89,7 +94,9 @@
                 </span>
             </button>
 
-            <div class="flex-1 overflow-y-auto px-20 pb-20">
+            {{-- `min-h-0` por la misma razón que en el sidebar de escritorio: el scroll debe vivir
+                 aquí, no en la hoja completa. --}}
+            <div class="min-h-0 flex-1 overflow-y-auto px-20 pb-20">
                 <div class="mb-16">
                     <x-marketplace.search-filters :categorias="$categorias" />
                 </div>
@@ -107,7 +114,7 @@
         x-transition:enter-end="opacity-100 translate-y-0"
         class="absolute inset-x-0 bottom-0 z-20 md:hidden"
     >
-        <div class="rounded-t-cards border-t border-cloud bg-white shadow-lg">
+        <div class="border-t border-cloud bg-white shadow-lg">
             <x-marketplace.taller-popover-content />
         </div>
     </div>

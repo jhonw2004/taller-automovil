@@ -127,11 +127,15 @@ export default function map(center, zoom) {
             this.map.on('click', () => {
                 this.$store.search.selected = null;
             });
-            this.map.on('popupopen', (event) => {
-                const closeButton = event.popup.getElement()?.querySelector('[data-close-popover]');
-                closeButton?.addEventListener('click', () => {
+
+            // Delegado en el contenedor del mapa (en vez de buscar el botón cada vez que se
+            // abre un popup): el contenido del popup se recrea en cada `updateMarkers()`, así
+            // que un listener atado a un nodo puntual queda huérfano tan pronto ese marcador se
+            // reemplaza. La delegación funciona sin importar cuántas veces se recree el DOM.
+            this.map.getContainer().addEventListener('click', (event) => {
+                if (event.target.closest('[data-close-popover]')) {
                     this.$store.search.selected = null;
-                });
+                }
             });
 
             this.$watch('$store.search.results', (results) => this.updateMarkers(results));

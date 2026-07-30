@@ -1,6 +1,31 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-29 (vigesimonovena sesión: cierre de `019-mapa-busqueda-ux` y `018-modernizacion-ui` — ambas specs pasan a `status: implemented`, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-30 (trigésima sesión: refinamientos UX post-019 — feedback de usuario aplicado sobre mapa/búsqueda, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-30 (trigésima sesión): refinamientos UX post-019 — sidebar edge-to-edge, bordes rectos, delegación de eventos, stacking context (sin nuevos tests, 568/568 verdes)
+
+El usuario pidió commit+push de los cambios en el working tree más actualización de `resume.md`. Antes de commiteaer se revisaron las diferencias pendientes: 5 archivos con refinamientos UX que no se habían commiteado en la sesión anterior. Todos son cambios puramente visuales/de interactividad sobre la experiencia de búsqueda/mapa (`019-mapa-busqueda-ux`), sin tocar lógica de negocio, modelos, rutas ni API.
+
+**Archivos modificados (5):**
+
+- **`resources/views/marketplace/search/map-experience.blade.php`**: sidebar de escritorio migrado de card flotante (`pointer-events-auto`, `rounded-cards`, `shadow-lg`, separado 16px de los bordes) a panel acoplado (`inset-y-0 left-0`, `border-r`, sin `rounded-*`, sin `shadow-lg`). Hoja inferior móvil y card flotante sin `rounded-t-cards`. Agregado `min-h-0` tanto en el scroll del sidebar como en la hoja móvil (antes el scroll no funcionaba correctamente con muchos resultados porque el contenedor no respetaba `flex-1`). Filtros movidos dentro del panel en vez de en el header colapsable.
+
+- **`resources/views/components/marketplace/search-filters.blade.php`**: eliminadas todas las clases `rounded-inputs` (el usuario pidió explícitamente que no hubiera bordes redondeados ni "chips"/tags en los filtros). Controles (input, select, checkbox, botón) ahora sin `rounded-*`.
+
+- **`resources/views/components/marketplace/map.blade.php`**: agregado `z-0` al contenedor raíz de Leaflet. Sin esto, el `relative` del contenedor no creaba stacking context propio y los z-index internos de Leaflet (hasta 1000) competían con los `z-20` de los drawers/chips/hoja externos, pintando el mapa por encima de la UI.
+
+- **`resources/js/alpine/components/map.js`**: listener de cierre de popup migrado de búsqueda directa del botón en cada `popupopen` (quedaba huérfano al recrear marcadores) a delegación de eventos en `map.getContainer()` (`event.target.closest('[data-close-popover]')`), robusto ante recreaciones del DOM.
+
+- **`resources/css/app.css`**: `.taller-popover .leaflet-popup-content-wrapper` cambió de `border-radius: var(--radius-cards)` a `0` (misma directriz del usuario: sin bordes redondeados en la experiencia de mapa).
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes. **568/568 tests verdes** (sin cambios en lógica de negocio). Smoke test no realizado (mismo motivo estructural de siempre).
+
+### Qué queda pendiente tras esta sesión
+
+- Verificación visual en navegador real: nunca se ha hecho en todo el proyecto (limitación estructural del entorno).
+- Todas las specs (001–019) están en `status: implemented`; no queda trabajo documentado pendiente en `specs/`.
+
+## Qué se hizo el 2026-07-29 (vigesimonovena sesión): cierre de todos los pendientes de `018-modernizacion-ui` y `019-mapa-busqueda-ux` (568/568 tests verdes)
 
 ## Qué se hizo el 2026-07-29 (vigesimonovena sesión): cierre de todos los pendientes de `018-modernizacion-ui` y `019-mapa-busqueda-ux` (568/568 tests verdes)
 
@@ -825,7 +850,7 @@ El proyecto Laravel ya no es un esqueleto:
 - **014-notificaciones** (decimosexta sesión): completo — tabla `notificaciones` (destinatario mutuamente excluyente `usuario_marketplace_id`/`usuario_sistema_id`), `Notificacion` + `CrearNotificacionAction`/`MarcarNotificacionLeidaAction`, 10 clases en `app/Notifications/` conectadas a sus 6 features origen (listeners nuevos sobre 3 eventos ya existentes de `006`/`010`/`013`, primer uso de Observers del proyecto para `orden.*`/`nota.emitida`, llamada directa en las Actions de `solicitud.*`/`usuario.creado`, comando programado diario para `password.expirada`), endpoint `POST /notificaciones/{id}/marcar-leida` (guard `web,sistema` combinado), campana Livewire en el topbar de `/admin`+`/erp` vía `renderHook`, sección en el dashboard marketplace. 2 bugs reales de manejo de excepciones JSON/redirect corregidos (`AuthenticationException::redirectUsing()` + `shouldRenderJsonWhen` ampliado en `bootstrap/app.php`). 40 tests nuevos.
 - **015-auditoria** (decimoséptima sesión, commiteado y pusheado en `27e6fab` en la decimoctava sesión): completo — **reemplazo total de `spatie/laravel-activitylog`** por tablas propias append-only. 3 migraciones (`auditoria_eventos`, `auditoria_accesos`, `auditoria_talleres`) + migración de drop de `activity_log`. Modelos append-only que bloquean `update()`/`delete()` vía `BusinessException`. 2 Actions centralizadas (`RegistrarEventoAuditoriaAction`/`RegistrarAccesoAuditoriaAction`). `TallerObserver` (cambios sensibles con pares old/new, dispara solo si `wasChanged()`). `RegistrarAccesoListener` (multi-handle sobre eventos nativos `Login`/`Logout`/`Failed`, ambos guards). `AuditarAccesoDenegadoFilament` middleware (reemplaza `Filament\Http\Middleware\Authenticate` en ambos paneles). 6 Resources Filament de solo lectura (`/erp` + `/admin`, cada uno filtra por taller activo o no). 12 Actions de 8 features anteriores migradas de `activity()` a la tabla propia. 3 gaps de auditoría cerrados (`AnularOrdenTrabajoAction`, `AsignarRolAction`, `RegistrarMovimientoInventarioAction` ajustes). Bug corregido en `BelongsToTaller::sinScope()` (guard incorrecto). 31 tests nuevos.
 - **Auditoría de consistencia** (decimonovena sesión, commiteado y pusheado en `55047a5` en la vigésima sesión): FK real de `orden_trabajo_id` en `resenas`, `Taller::contarEntidadesHijasActivas()` con primer consumidor real de `BelongsToTaller::sinScope()`, `UnidadMedidaSeeder`/`CategoriaSeeder` (lo que faltaba del seeding de `017`), 6 factories faltantes, tests de `SequentialCodeGenerator`/`TenantSwitcher`, desactivación por taller en `ActivarDesactivarUsuarioSistemaAction` (en vez de global), corrección de `tasks.md`/specs en todas las features. 16 tests nuevos.
-- **Total: 568/568 tests Pest verdes** (552 previos + 16 de la auditoría de consistencia), `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
+- **Total: 568/568 tests Pest verdes** (552 previos + 16 de la auditoría de consistencia), sin cambios en el conteo de esta sesión (refinamientos puramente visuales/JS). `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
 - Git: repositorio en rama `specs/planificacion`. Todo el código de las 17 features más la auditoría de consistencia está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab` → `2020912` → `55047a5` → `aa05f29`).
 
