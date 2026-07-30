@@ -15,13 +15,13 @@
 
     @unless ($layoutVariant === 'app-shell')
         @if (session('status'))
-            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-24 lg:px-16">
                 <x-alert type="success">{{ session('status') }}</x-alert>
             </div>
         @endif
 
         @if (session('error'))
-            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+            <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-24 lg:px-16">
                 <x-alert type="error">{{ session('error') }}</x-alert>
             </div>
         @endif

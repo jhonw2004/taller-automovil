@@ -56,7 +56,7 @@
                         x-model="comentario"
                         rows="3"
                         maxlength="2000"
-                        class="w-full rounded-inputs border border-cloud px-16 py-12 text-body text-graphite placeholder:text-ash focus:outline-none focus:ring-2 focus:ring-obsidian/20"
+                        class="w-full rounded-inputs border border-cloud px-16 py-12 text-body text-graphite transition placeholder:text-ash hover:border-fog focus:outline-none focus:ring-2 focus:ring-obsidian/20"
                         placeholder="Cuéntanos tu experiencia en este taller"
                     ></textarea>
                 </div>

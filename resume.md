@@ -1,6 +1,28 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-29 (vigesimoctava sesión: spec `019-mapa-busqueda-ux` + rediseño completo de búsqueda tipo Google Maps, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-29 (vigesimonovena sesión: cierre de `019-mapa-busqueda-ux` y `018-modernizacion-ui` — ambas specs pasan a `status: implemented`, 568/568 tests verdes). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-29 (vigesimonovena sesión): cierre de todos los pendientes de `018-modernizacion-ui` y `019-mapa-busqueda-ux` (568/568 tests verdes)
+
+El usuario pidió continuar con todos los pendientes documentados. Se abordaron en orden: reconciliación de `019` (código ya escrito en la sesión anterior pero `tasks.md` sin marcar), y el resto de `018` (vistas restantes, Filament, componentes compartidos).
+
+**Reconciliación de `019-mapa-busqueda-ux`**: el código de la sesión anterior (mapa-primero, marcadores/controles propios, card flotante, atribución OSM) ya estaba completo pero `tasks.md` seguía con las 60 tareas sin marcar. Se verificó cada ítem contra el código real (`map.js`, `map.blade.php`, `map-experience.blade.php`, `store.js`, `taller-popover-content.blade.php`, `app.css`, `Taller::toSearchJsonResponse()`) y se marcaron `[x]` los que ya estaban resueltos. Se verificó con Context7 (`/websites/leafletjs_reference-2_0_0`) que la API usada (`zoomControl`, `attributionControl`, `L.control.attribution({prefix, position})`, `bindPopup(html, {className, closeButton, autoPan})`, `L.divIcon`) coincide con la documentación vigente. Se actualizó `005-marketplace-busqueda-perfil/spec.md` para reflejar `logo_url`/`direccion` en el contrato de respuesta del endpoint (campo aditivo). **`019-mapa-busqueda-ux/spec.md` → `status: implemented`.**
+
+**Bug de padding invertido (`px-16 ... sm:px-4`, heredado de `016`) corregido en todos los archivos donde aparecía**: `nav.blade.php`, `workshops/show.blade.php`, `dashboard/index.blade.php`, `layouts/app.blade.php` (banners de sesión) y `layouts/auth.blade.php` (banners + accesos de usuario autenticado) — alineados al patrón real ya usado en `home.blade.php`/`footer.blade.php` (`px-16 sm:px-24 lg:px-16`), confirmado con grep que no queda ningún `sm:px-4` en `resources/views/`. `workshops/show.blade.php` y `dashboard/index.blade.php` ya usaban grids/flex mobile-first correctos (`sm:grid-cols-2 lg:grid-cols-3`, `flex-col lg:flex-row`) — no necesitaron más cambios que el padding.
+
+**Filament ERP/Admin personalizado**: verificado con Context7 (`/websites/filamentphp_5_x`) que el mecanismo soportado para CSS adicional en `viteTheme` son las clases hook `.fi-*` documentadas (`docs/5.x/styling/css-hooks`) con `@apply` — no existe otro mecanismo. `resources/css/filament/{erp,admin}/theme.css`: radios de `.fi-btn`/`.fi-input`/`.fi-select-input`/`.fi-fo-textarea` (14px) y `.fi-section`/`.fi-modal-window`/`.fi-wi-stats-overview-stat` (20px) alineados a los tokens de `016`; página de login (`.fi-simple-layout`/`.fi-simple-main`, confirmado leyendo el Blade del vendor) con fondo oscuro + card con sombra. `App\Filament\Auth\Pages\Login` ahora sobreescribe `getHeading()`/`getSubheading()` diferenciando por panel (`Filament::getCurrentPanel()->getId()`): ERP → "Panel de tu taller", Admin → "Super administración". Verificado con `php artisan serve` + `curl` que ambos textos aparecen en `/erp/login` y `/admin/login`.
+
+**Componentes compartidos refinados sin cambiar `@props`**: `<x-input>`/`<x-select>` ganaron `transition`, `hover:border-fog`, estados `disabled:`, y `aria-invalid`/`aria-describedby` enlazando el mensaje de error. `<x-button>` ganó `focus-visible:ring-2` (antes sin foco visible por teclado) y estados `active:` por variante. `<x-card>` no necesitó cambios. El `<textarea>` de `resena-form.blade.php` (usa `x-model` de Alpine, no `<x-input>`) alineado con el mismo `transition hover:border-fog`.
+
+**`018-modernizacion-ui/tasks.md`**: todos los bloques restantes marcados `[x]` (resto de vistas, Filament, componentes compartidos, cierre de feature). **`018-modernizacion-ui/spec.md` → `status: implemented`.**
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes, `npm run build` sin errores (ambos temas Filament + `app.css`/`app.js` compilan), **568/568 tests verdes** (1251 aserciones). Smoke test con `php artisan serve` + `curl`: `/`, `/talleres/buscar`, `/erp/login`, `/admin/login` → 200, headings de login diferenciados por panel confirmados en el HTML. Verificación visual en navegador real no se hizo (`claude-in-chrome` no disponible, mismo motivo estructural de todas las sesiones).
+
+### Qué queda pendiente tras esta sesión
+
+- **Nada commiteado todavía**: todos los cambios de esta sesión están en el working tree, sin `git add`/`commit`/`push` (no se pidió explícitamente).
+- Verificación visual en navegador real: nunca se ha hecho en todo el proyecto (limitación estructural del entorno, no de esta sesión en particular).
+- Ambas specs de UI (`016`, `018`, `019`) están ahora `implemented`; no queda ningún trabajo de modernización visual pendiente documentado en `specs/`.
 
 ## Qué se hizo el 2026-07-29 (vigesimoctava sesión): spec `019-mapa-busqueda-ux` + rediseño completo de búsqueda tipo Google Maps (568/568 tests verdes)
 

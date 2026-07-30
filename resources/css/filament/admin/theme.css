@@ -2,3 +2,44 @@
 
 @source '../../../../app/Filament/Admin/**/*';
 @source '../../../../resources/views/filament/admin/**/*';
+
+/*
+ * 018-modernizacion-ui: alinear el panel de Super Admin con los tokens visuales de
+ * 016-ui-design-system (radios de tarjetas/botones/inputs) — clases hook oficiales de
+ * Filament v5, ver https://filamentphp.com/docs/5.x/styling/css-hooks. `->colors()` en
+ * AdminPanelProvider ya cubre la paleta; esto cubre lo que Filament no expone vía closure de
+ * colores. Mismas reglas que `resources/css/filament/erp/theme.css` (paneles independientes,
+ * cada uno con su propio build de Vite).
+ */
+.fi-btn {
+    @apply rounded-[14px];
+}
+
+.fi-input,
+.fi-select-input,
+.fi-fo-textarea {
+    @apply rounded-[14px];
+}
+
+.fi-section,
+.fi-modal-window,
+.fi-wi-stats-overview-stat {
+    @apply rounded-[20px];
+}
+
+.fi-badge {
+    @apply rounded-[12px];
+}
+
+/* Página de login (`fi-simple-layout`): fondo oscuro consistente con el hero del marketplace, card clara centrada. */
+.fi-simple-layout {
+    @apply bg-zinc-950;
+}
+
+.fi-simple-main-ctn {
+    @apply py-12;
+}
+
+.fi-simple-main {
+    @apply rounded-[20px] shadow-xl;
+}

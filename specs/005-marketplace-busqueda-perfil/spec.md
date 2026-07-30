@@ -27,7 +27,7 @@ Permitir a cualquier visitante buscar talleres por ubicación, categoría y otro
 ### API JSON de búsqueda
 
 - Dado que el frontend Alpine necesita talleres para el mapa y la lista, cuando se consulta `GET /api/talleres/search?lat=&lon=&radio=&categoria=&q=&min_calificacion=&open_now=&sort=`, entonces devuelve un JSON con los talleres que cumplen los filtros, incluyendo `lat`, `lon` para los marcadores del mapa.
-- La respuesta JSON incluye: `id`, `nombre`, `slug`, `descripcion_corta`, `lat`, `lon`, `calificacion_promedio`, `cantidad_resenas`, `categorias`, `abierto_ahora`, `distancia_km` (si se enviaron `lat`/`lon`).
+- La respuesta JSON incluye: `id`, `nombre`, `slug`, `descripcion_corta`, `logo_url`, `direccion`, `lat`, `lon`, `calificacion_promedio`, `cantidad_resenas`, `categorias`, `abierto_ahora`, `distancia_km` (si se enviaron `lat`/`lon`). `logo_url` y `direccion` se agregaron en `019-mapa-busqueda-ux` para la card flotante de detalle del mapa — campo aditivo, no rompe consumidores existentes.
 - La respuesta nunca incluye talleres `INACTIVO`, `SUSPENDIDO`, `visible_en_mapa = FALSE`, ni soft-deleteados.
 - El endpoint es público (sin autenticación). Incluye rate limiting `throttle:30,1`.
 

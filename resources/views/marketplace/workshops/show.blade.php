@@ -7,7 +7,7 @@
 @endphp
 
 @section('content')
-    <div class="mx-auto max-w-[1200px] px-16 py-32 sm:px-4">
+    <div class="mx-auto max-w-[1200px] px-16 py-32 sm:px-24 lg:px-16">
         <div class="flex flex-col gap-24 lg:flex-row">
             <div class="flex-1">
                 <div class="flex items-center gap-16">

@@ -1,6 +1,6 @@
 ---
 id: 019-mapa-busqueda-ux
-status: draft
+status: implemented
 depends_on: [005-marketplace-busqueda-perfil, 018-modernizacion-ui]
 resumen: "Rediseño de /talleres/buscar como experiencia 'mapa primero' (estilo Google Maps adaptado a Leaflet/OpenStreetMap): mapa a pantalla completa sin solaparse con el header, card flotante de taller al hacer click en un marcador, marcadores y controles propios, atribución Leaflet/OSM minimizada, totalmente responsivo."
 ---

@@ -19,7 +19,7 @@
     --}}
     @auth('web')
         <div class="border-b border-cloud bg-white">
-            <div class="mx-auto flex max-w-[1200px] items-center gap-24 px-16 py-12 text-body text-fog sm:px-4">
+            <div class="mx-auto flex max-w-[1200px] items-center gap-24 px-16 py-12 text-body text-fog sm:px-24 lg:px-16">
                 <span class="text-graphite">Hola, {{ auth('web')->user()->nombre }}</span>
                 <a href="{{ route('dashboard') }}" class="text-obsidian hover:underline">Mis favoritos y reseñas</a>
             </div>
@@ -27,13 +27,13 @@
     @endauth
 
     @if (session('status'))
-        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-24 lg:px-16">
             <x-alert type="success">{{ session('status') }}</x-alert>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-4">
+        <div class="mx-auto max-w-[1200px] px-16 pt-16 sm:px-24 lg:px-16">
             <x-alert type="error">{{ session('error') }}</x-alert>
         </div>
     @endif

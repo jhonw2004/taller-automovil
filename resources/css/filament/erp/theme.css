@@ -2,3 +2,42 @@
 
 @source '../../../../app/Filament/Erp/**/*';
 @source '../../../../resources/views/filament/erp/**/*';
+
+/*
+ * 018-modernizacion-ui: alinear el ERP con los tokens visuales de 016-ui-design-system
+ * (radios de tarjetas/botones/inputs) — clases hook oficiales de Filament v5, ver
+ * https://filamentphp.com/docs/5.x/styling/css-hooks. `->colors()` en ErpPanelProvider ya
+ * cubre la paleta; esto cubre lo que Filament no expone vía closure de colores.
+ */
+.fi-btn {
+    @apply rounded-[14px];
+}
+
+.fi-input,
+.fi-select-input,
+.fi-fo-textarea {
+    @apply rounded-[14px];
+}
+
+.fi-section,
+.fi-modal-window,
+.fi-wi-stats-overview-stat {
+    @apply rounded-[20px];
+}
+
+.fi-badge {
+    @apply rounded-[12px];
+}
+
+/* Página de login (`fi-simple-layout`, ver vendor/filament/filament/resources/views/components/layout/simple.blade.php): fondo oscuro consistente con el hero del marketplace, card clara centrada. */
+.fi-simple-layout {
+    @apply bg-zinc-950;
+}
+
+.fi-simple-main-ctn {
+    @apply py-12;
+}
+
+.fi-simple-main {
+    @apply rounded-[20px] shadow-xl;
+}

@@ -1,6 +1,6 @@
 ---
 id: 018-modernizacion-ui
-status: draft
+status: implemented
 depends_on: [016-ui-design-system]
 resumen: "Modernización visual transversal de todas las vistas (marketplace, ERP, Super Admin) sin alterar lógica de negocio ni funcionalidad: Home rediseñado como landing page persuasiva (sin mapa/buscador embebido), formularios y componentes menos genéricos, tema Filament personalizado, y responsividad real en los 3 breakpoints en cada vista existente."
 ---

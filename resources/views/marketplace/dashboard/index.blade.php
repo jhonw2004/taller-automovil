@@ -3,7 +3,7 @@
 @section('title', 'Mi cuenta')
 
 @section('content')
-    <div class="mx-auto max-w-[1200px] px-16 py-32 sm:px-4">
+    <div class="mx-auto max-w-[1200px] px-16 py-32 sm:px-24 lg:px-16">
         <h1 class="text-heading-sm font-semibold text-graphite">Mi cuenta</h1>
 
         <section

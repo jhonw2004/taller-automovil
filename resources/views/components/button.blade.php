@@ -8,14 +8,14 @@
 
 @php
     $variantClass = match ($variant) {
-        'ghost' => 'bg-white text-obsidian border border-cloud hover:bg-paper',
-        'neutral' => 'bg-paper text-obsidian border border-transparent hover:bg-cloud',
-        default => 'bg-obsidian text-white border border-transparent hover:bg-graphite',
+        'ghost' => 'bg-white text-obsidian border border-cloud hover:bg-paper active:bg-cloud',
+        'neutral' => 'bg-paper text-obsidian border border-transparent hover:bg-cloud active:bg-mist',
+        default => 'bg-obsidian text-white border border-transparent hover:bg-graphite active:bg-graphite',
     };
 
     $isDisabled = $disabled || $loading;
 
-    $baseClass = "inline-flex items-center justify-center gap-8 rounded-buttons px-16 py-12 text-body font-medium leading-none transition disabled:cursor-not-allowed disabled:opacity-60 $variantClass";
+    $baseClass = "inline-flex items-center justify-center gap-8 rounded-buttons px-16 py-12 text-body font-medium leading-none transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-obsidian/30 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 $variantClass";
 @endphp
 
 @if ($href && ! $isDisabled)
