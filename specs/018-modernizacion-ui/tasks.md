@@ -36,6 +36,7 @@
 
 ## Filament — ERP y Super Admin
 
+- [x] Eliminar la marca propia de Filament de la UI (2026-07-29): `FilamentInfoWidget` (widget de dashboard con el logo/versión de Filament y enlaces a filamentphp.com/GitHub) quitado de `widgets()` en `AdminPanelProvider` y `ErpPanelProvider`. `brandName`/`brandLogo`/`favicon` ya apuntaban a "TallerPro" desde la vigesimosegunda sesión — no había otro punto de la UI (login, vistas, tema) que mostrara el logo/nombre de Filament, verificado por grep contra las vistas publicadas del vendor.
 - [ ] Verificar con Context7 el mecanismo soportado por Filament v5 para CSS custom adicional dentro de `viteTheme` y para personalizar la página de login.
 - [ ] Personalizar `resources/css/filament/erp/theme.css` y `resources/css/filament/admin/theme.css` (tipografía, densidad, tarjetas de dashboard).
 - [ ] Personalizar la composición visual de la página de login de ambos paneles.

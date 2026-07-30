@@ -16,7 +16,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -77,7 +76,6 @@ class ErpPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Erp/Widgets'), for: 'App\Filament\Erp\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
                 TenantSwitcher::class,
             ])
             ->middleware([
