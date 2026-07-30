@@ -27,8 +27,6 @@ El usuario pidió commit+push de los cambios en el working tree más actualizaci
 
 ## Qué se hizo el 2026-07-29 (vigesimonovena sesión): cierre de todos los pendientes de `018-modernizacion-ui` y `019-mapa-busqueda-ux` (568/568 tests verdes)
 
-## Qué se hizo el 2026-07-29 (vigesimonovena sesión): cierre de todos los pendientes de `018-modernizacion-ui` y `019-mapa-busqueda-ux` (568/568 tests verdes)
-
 El usuario pidió continuar con todos los pendientes documentados. Se abordaron en orden: reconciliación de `019` (código ya escrito en la sesión anterior pero `tasks.md` sin marcar), y el resto de `018` (vistas restantes, Filament, componentes compartidos).
 
 **Reconciliación de `019-mapa-busqueda-ux`**: el código de la sesión anterior (mapa-primero, marcadores/controles propios, card flotante, atribución OSM) ya estaba completo pero `tasks.md` seguía con las 60 tareas sin marcar. Se verificó cada ítem contra el código real (`map.js`, `map.blade.php`, `map-experience.blade.php`, `store.js`, `taller-popover-content.blade.php`, `app.css`, `Taller::toSearchJsonResponse()`) y se marcaron `[x]` los que ya estaban resueltos. Se verificó con Context7 (`/websites/leafletjs_reference-2_0_0`) que la API usada (`zoomControl`, `attributionControl`, `L.control.attribution({prefix, position})`, `bindPopup(html, {className, closeButton, autoPan})`, `L.divIcon`) coincide con la documentación vigente. Se actualizó `005-marketplace-busqueda-perfil/spec.md` para reflejar `logo_url`/`direccion` en el contrato de respuesta del endpoint (campo aditivo). **`019-mapa-busqueda-ux/spec.md` → `status: implemented`.**
