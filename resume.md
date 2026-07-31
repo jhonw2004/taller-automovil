@@ -1,6 +1,40 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-31 (trigésimosexta sesión: dashboards de métricas por rol — widgets de estadísticas ERP acotados por permisos y widgets de plataforma exclusivos del Super Admin — + localización completa a español, 609/609 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimoséptima sesión: cambio de contraseña del Super Admin + diagnóstico del "403 al hacer login" — no era bug de rutas, es autorización de panel con sesión ya autenticada — + consolidación del dashboard ERP en un solo widget y fix de un test flaky, 607/607 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimoséptima sesión): cambio de contraseña del Super Admin, diagnóstico del 403 de login (no era bug de código), consolidación del dashboard `/erp` en un solo widget y fix de un test flaky (607/607 tests verdes)
+
+El usuario pidió (1) cambiar la contraseña del Super Admin del panel `/admin`, (2) investigar un error 403 que le salía al ir a `/admin/login` (preguntaba si los endpoints habían cambiado), y (3) simplificar los dashboards que se veían "engorrosos". El working tree ya traía sin commitear una consolidación de los 5 widgets de estadísticas del ERP en uno solo (trabajo previo del usuario).
+
+**Cambio de contraseña del Super Admin:**
+- Ejecutado vía `php artisan tinker` llamando a `App\Actions\Identidad\CambiarPasswordAction::execute()` (la Action del proyecto, que valida contra la contraseña actual y el historial de 5) sobre el `UsuarioSistema` con rol `super-admin` (username `superadmin`, id=8).
+- **Nueva contraseña entregada al usuario en el chat** (no se documenta aquí por seguridad — si hace falta recuperarla, ver la conversación de esta sesión o resetearla del mismo modo). Cumple la política (16 caracteres, mayúsculas/minúsculas/números/símbolos). Verificado con `Hash::check()` → `MATCH`; `debe_cambiar_password = false`; expiración +90 días; auditoría `PASSWORD_CHANGE/EXITOSO` registrada. La anterior quedó en `historial_passwords` (rechazada si se intenta reutilizar).
+
+**Diagnóstico del 403 en `/admin/login` (conclusión: no hay bug en rutas/middleware, los endpoints NO cambiaron):**
+- `php artisan route:list` confirma que `GET /admin/login` (`filament.admin.auth.login`) y `GET /erp/login` (`filament.erp.auth.login`) existen. Smoke test real con `php artisan serve` + HTTP: `/admin/login` sin sesión → **200**.
+- El único punto del código que puede emitir un 403 es `AuditarAccesoDenegadoFilament` (015-auditoria), que dispara solo cuando un usuario **ya autenticado** falla `canAccessPanel()` en una ruta protegida — nunca en la página de login en sí (Filament aplica `authMiddleware` solo a rutas autenticadas; la ruta `/admin/login` no lo tiene, confirmado en `route:list -v`).
+- Reproducción real con un test HTTP temporal (descartado al terminar, no se commiteó): con sesión autenticada, `GET /admin/login` responde **302 → /admin**; es la página de destino la que devuelve el 403 según `canAccessPanel()`:
+  - **Super Admin**: `/admin` → 200, `/erp` → **403** (el rol global `super-admin` no tiene asignación a un taller, y `canAccessPanel('erp')` exige `taller_id !== null`).
+  - **Owner de taller** (ej. `admin-carrillo`): `/erp` → 200, `/admin` → **403** (solo `esSuperAdmin()` accede al panel admin).
+- **Explicación para el usuario**: el 403 es autorización intencional (mismo criterio de `canViewAny()` de los Resources y de la spec 015, que audita `LOGIN/DENEGADO`). Si le aparece al ir a `/admin/login` es porque el navegador conserva una cookie de sesión vieja: Filament lo redirige al dashboard y ahí falla `canAccessPanel()`. Solución: borrar cookies / ventana de incógnito, y usar cada cuenta en su panel (Super Admin → `/admin`, dueño/personal → `/erp`). No es un problema de endpoints.
+
+**Rediseño del dashboard `/erp` — consolidación de 5 widgets en 1:**
+- Antes: `ClientesVehiculosStatsWidget`, `EmpleadosStatsWidget`, `InventarioStatsWidget`, `OrdenesTrabajoStatsWidget`, `VentasStatsWidget` — 5 clases `StatsOverviewWidget` separadas, cada una con su propio contenedor/heading apilado en el dashboard (hasta 5 bloques para un owner) → aspecto "engorroso".
+- **Ahora: un solo widget `App\Filament\Erp\Widgets\ResumenTallerWidget`** que arma la lista de `Stat` combinando 5 métodos privados (`statsOrdenes()`, `statsVentas()`, `statsInventario()`, `statsClientesVehiculos()`, `statsEmpleados()`), cada uno gateado por el mismo permiso que tenía su widget original (`ordenes.ver`, `notas.ver`, `inventario.ver`/`repuestos.ver`, `clientes.ver`/`vehiculos.ver`, `empleados.ver`). `canView()` = `true` si el usuario tiene al menos uno de esos permisos (si no tiene ninguno, el widget entero no se renderiza). Grilla responsiva explícita (`columns = ['md' => 2, 'xl' => 3]`). Misma lógica/queries que antes, solo cambió el agrupamiento visual.
+- Los 5 archivos viejos se eliminaron. El dashboard Admin (`PlataformaStatsWidget` + 2 `ChartWidget`) no se tocó — ya era un solo widget de 6 tarjetas en grilla, sin el problema de "muchos bloques separados".
+- **`tests/Feature/Sistema/MetricasErpWidgetsTest.php` reescrito** contra `ResumenTallerWidget` (7 tests en vez de 9: `canView()` con/sin permisos de dashboard, tarjetas visibles por rol vía `getLabel()`, y los 3 tests de conteos reales — pendientes/en progreso, stock bajo, ventas del mes excluyendo anuladas). `SmokeDashboardTest` y `MetricasAdminWidgetsTest` no necesitaron cambios (no referencian las clases eliminadas).
+
+**Fix de un test flaky preexistente (encontrado corriendo la suite, no relacionado con estos cambios):** `CrearSolicitudTallerActionTest` → "no expone el id interno a través del token" asertaba `$token->not->toContain((string) $id)` contra un `Str::uuid()` aleatorio — cualquier UUID puede contener una subcadena numérica por casualidad (falló con id=29 y `...-29e0-...`, y en aislado con id=4). Corregido a validar el formato de UUID v4 (`/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/`) + `not->toBe((string) $id)`, que es la aserción que realmente protege contra la exposición del id.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes; **suite completa 607/607 tests verdes** (609 anteriores − 2 por la consolidación de tests de widgets, 1353 aserciones). Verificación visual en navegador real no realizada (mismo motivo estructural de siempre).
+
+**Commit:** (ver commit de esta sesión abajo), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- Sección E (backups) de `020-seguridad-produccion` sigue **bloqueada** esperando decisión del usuario (destino local/S3; `spatie/laravel-backup` vs. script `pg_dump`+cron con retención de 14 días) — por eso `020` sigue en `status: draft`. Es el único pendiente documentado en `specs/`.
+- Confirmar con el usuario que el 403 no vuelve a aparecer tras borrar la cookie de sesión y entrar con la contraseña nueva. Si reaparece, hace falta el mensaje/URL exacto para seguir investigando (no se encontró ningún bug de código en esta sesión).
+- Verificación visual en navegador real del dashboard `/erp` consolidado: no realizada (mismo motivo estructural de siempre).
 
 ## Qué se hizo el 2026-07-31 (trigésimosexta sesión): dashboards de métricas por rol (ERP + Admin) y localización a español de toda la app (609/609 tests verdes)
 
