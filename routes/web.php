@@ -18,8 +18,10 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 |--------------------------------------------------------------------------
 */
 
-Route::get('/talleres/buscar', [TallerBusquedaController::class, 'index'])->name('talleres.buscar');
-Route::get('/talleres/{slug}', [TallerPerfilController::class, 'show'])->name('talleres.show');
+Route::get('/talleres/buscar', [TallerBusquedaController::class, 'index'])
+    ->name('talleres.buscar')->middleware('throttle:publico-lectura');
+Route::get('/talleres/{slug}', [TallerPerfilController::class, 'show'])
+    ->name('talleres.show')->middleware('throttle:publico-lectura');
 
 /*
 |--------------------------------------------------------------------------
@@ -28,10 +30,21 @@ Route::get('/talleres/{slug}', [TallerPerfilController::class, 'show'])->name('t
 */
 
 Route::prefix('solicitudes-taller')->name('solicitudes.')->group(function () {
-    Route::get('/nueva', [SolicitudTallerController::class, 'create'])->name('create');
-    Route::post('/', [SolicitudTallerController::class, 'store'])->name('store');
-    Route::get('/{token}', [SolicitudTallerController::class, 'seguimiento'])->name('seguimiento');
-    Route::post('/{token}/cancelar', [SolicitudTallerController::class, 'cancelar'])->name('cancelar');
+    Route::get('/nueva', [SolicitudTallerController::class, 'create'])->name('create')
+        ->middleware('throttle:publico-lectura');
+    Route::post('/', [SolicitudTallerController::class, 'store'])->name('store')
+        ->middleware('throttle:publico-escritura');
+    // 020-seguridad-produccion §D: `token_publico` es una columna `uuid` nativa de Postgres
+    // (`2026_07_26_070001_create_solicitudes_taller_table.php`) — sin esta restricción, un
+    // segmento que no tiene forma de UUID (ej. `/solicitudes-taller/abc`) llegaba hasta
+    // `SolicitudTaller::where('token_publico', $token)->firstOrFail()` y Postgres rechazaba la
+    // query con `invalid input syntax for type uuid`, un `PDOException` sin capturar → 500 crudo
+    // en vez del 404 esperado para un token inexistente. Encontrado con un test real (no
+    // hipotético), corregido en la ruta para que ni siquiera llegue al controlador.
+    Route::get('/{token}', [SolicitudTallerController::class, 'seguimiento'])->name('seguimiento')
+        ->middleware('throttle:publico-lectura')->whereUuid('token');
+    Route::post('/{token}/cancelar', [SolicitudTallerController::class, 'cancelar'])->name('cancelar')
+        ->middleware('throttle:publico-escritura')->whereUuid('token');
 });
 
 /*
@@ -63,6 +76,6 @@ Route::middleware('auth:web')->get('/dashboard', [DashboardController::class, 'i
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:web,sistema')
+Route::middleware(['auth:web,sistema', 'throttle:notificaciones'])
     ->post('/notificaciones/{notificacion}/marcar-leida', [NotificacionController::class, 'marcarLeida'])
     ->name('notificaciones.marcar-leida');

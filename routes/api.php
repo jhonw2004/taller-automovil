@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/talleres/search', [TallerBusquedaApiController::class, 'search'])
-    ->middleware('throttle:30,1')
+    ->middleware('throttle:busqueda-api')
     ->name('api.talleres.search');
 
 /*
@@ -25,7 +25,7 @@ Route::get('/talleres/search', [TallerBusquedaApiController::class, 'search'])
 | tener `StartSession`/`VerifyCsrfToken`; el fetch de Alpine debe enviar `X-CSRF-TOKEN`.
 */
 
-Route::middleware(['web', 'auth:web', 'throttle:10,1'])->group(function () {
+Route::middleware(['web', 'auth:web', 'throttle:marketplace-escritura'])->group(function () {
     Route::post('/resenas', [ResenaApiController::class, 'storeOrUpdate'])->name('api.resenas.store');
     Route::delete('/resenas/{resena}', [ResenaApiController::class, 'destroy'])->name('api.resenas.destroy');
     Route::post('/favoritos', [FavoritoApiController::class, 'store'])->name('api.favoritos.store');

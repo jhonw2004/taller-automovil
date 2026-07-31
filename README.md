@@ -111,6 +111,26 @@ php artisan test
 php artisan test tests/Feature/NombreFeature
 ```
 
+## Seguridad
+
+Ver `specs/020-seguridad-produccion/` para el detalle completo (rate limiting, cabeceras HTTP, subida de archivos, rol de base de datos de mínimo privilegio, backups). Dos pasos manuales obligatorios antes de cada release (no hay CI configurado todavía en este repo):
+
+```bash
+# Vulnerabilidades conocidas en dependencias PHP
+composer audit
+
+# Vulnerabilidades conocidas en dependencias JS (alto/crítico)
+npm audit --audit-level=high
+```
+
+Si aparece un CVE: actualizar el paquete a una versión parcheada. Si no hay parche disponible todavía, documentar la mitigación aplicada (o la razón por la que no aplica al proyecto) en `specs/020-seguridad-produccion/plan.md` antes de continuar con el release.
+
+Antes de desplegar a producción, correr el checklist automatizado:
+
+```bash
+php artisan security:check-produccion
+```
+
 ## Stack
 
 | Componente | Tecnología |

@@ -14,6 +14,15 @@ use Illuminate\Support\Carbon;
  */
 class TallerBusquedaApiController extends Controller
 {
+    /**
+     * 020-seguridad-produccion §B: tope duro de filas devueltas por request. Antes de este
+     * límite, `$query->get()` sin `limit()` materializaba y serializaba **todos** los talleres
+     * visibles del marketplace en cada llamada — sin paginación ni cap, un endpoint público
+     * que crece sin límite junto con los datos, y que ya recibe hasta 30 requests/min por IP
+     * (`throttle:busqueda-api`). El contrato JSON (`data`/`meta.total`) no cambia.
+     */
+    private const MAX_RESULTADOS = 100;
+
     public function search(Request $request): JsonResponse
     {
         $query = Taller::query()->activosVisibles()->with(['categorias', 'horarios']);
@@ -68,7 +77,7 @@ class TallerBusquedaApiController extends Controller
             default => $tieneUbicacion ? $query->orderBy('distancia') : $query->orderByDesc('calificacion_promedio'),
         };
 
-        $talleres = $query->get();
+        $talleres = $query->limit(self::MAX_RESULTADOS)->get();
 
         return response()->json([
             'data' => $talleres->map->toSearchJsonResponse()->values(),

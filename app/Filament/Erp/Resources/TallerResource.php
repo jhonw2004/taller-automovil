@@ -90,6 +90,12 @@ class TallerResource extends Resource
                         ->disk('public')
                         ->directory('talleres/logos')
                         ->image()
+                        // 020-seguridad-produccion §B: sin este límite explícito, el único tope
+                        // real era `upload_max_filesize`/`post_max_size` de PHP a nivel de
+                        // servidor — un vector real de agotamiento de disco (subir logos
+                        // repetidamente sin límite de tamaño de aplicación).
+                        ->maxSize(2048)
+                        ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                         ->columnSpanFull(),
                 ])->columns(2),
                 Tab::make('Ubicación')->schema([

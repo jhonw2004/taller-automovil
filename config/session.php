@@ -169,7 +169,14 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // 020-seguridad-produccion §C: default cambiado de `null` (sin flag `Secure` si el operador
+    // olvida setear la variable en producción) a `true` automático fuera de `local`/`testing`.
+    // Un despliegue nunca queda con cookies de sesión sin `Secure` por omisión. Usa `env('APP_ENV')`
+    // directo, no `app()->environment()` — los archivos de config se cargan en
+    // `LoadConfiguration`, antes de que el contenedor tenga registrado el binding `env`; resolver
+    // un servicio acá revienta el boot entero con `Target class [env] does not exist` (bug real
+    // encontrado corriendo la suite completa tras este cambio, no solo leído en la documentación).
+    'secure' => env('SESSION_SECURE_COOKIE') ?? env('APP_ENV') === 'production',
 
     /*
     |--------------------------------------------------------------------------

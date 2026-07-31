@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // 020-seguridad-produccion §C: cabeceras de seguridad en toda respuesta, incluidas las
+        // de `routes/api.php` (grupo `api`, sin sesión) — se agrega al stack global, no solo
+        // al grupo `web`, para no dejar sin cubrir ningún endpoint JSON público.
+        $middleware->append(SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // `is('api/*')` cubre los endpoints JSON "puros"; `expectsJson()` (Accept: application/json,
