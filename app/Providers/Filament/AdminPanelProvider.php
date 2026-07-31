@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->authGuard('sistema')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->brandLogo(asset('logoapp.svg'))
+            ->darkModeBrandLogo(asset('logoappdark.svg'))
             ->brandLogoHeight('2.5rem')
             ->favicon(asset('logoapp.svg'))
             // 014-notificaciones: campana del topbar — el super admin también recibe

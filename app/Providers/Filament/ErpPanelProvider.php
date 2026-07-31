@@ -42,6 +42,7 @@ class ErpPanelProvider extends PanelProvider
             ->login(Login::class)
             ->authGuard('sistema')
             ->brandLogo(asset('logoapp.svg'))
+            ->darkModeBrandLogo(asset('logoappdark.svg'))
             ->brandLogoHeight('2.5rem')
             ->favicon(asset('logoapp.svg'))
             ->font('DM Sans')
