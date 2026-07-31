@@ -1,6 +1,27 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-31 (trigésimosegunda sesión: logo vectorial `logoapp.svg` reemplaza al `logo.png` de 1.4 MB, sin recorte circular, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimotercera sesión: rediseño del logo + soporte dark mode `logoappdark.svg` + cambio de contraseña del Super Admin, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimotercera sesión): rediseño del logo + soporte dark mode (`logoappdark.svg`) y cambio de contraseña del Super Admin (568/568 tests verdes)
+
+Dos tareas en una sesión: (1) el usuario rediseñó el logo y agregó soporte de dark mode, trabajo que quedó en el working tree; (2) el usuario pidió cambiar la contraseña del super admin del panel `/admin` y recibir la nueva.
+
+**Logo rediseñado + dark mode (cambios del usuario, sin tocar lógica de negocio):**
+- **`public/logoapp.svg` y `public/logoappdark.svg` (nuevo, ambos 1175 B, viewBox 290×72)**: reemplazan al logo anterior de 480×170 (insignia auto+teléfono). Diseño nuevo: marca abstracta geométrica — círculo azul `#4DA3FF`, forma vertical morada `#8B5CF6` y forma redondeada rosa `#EC4899` sobre gradiente `#3B82F6→#7C3AED→#EC4899` — + wordmark "TallerPro" (Rethink Sans/Inter, 42px, 800, letter-spacing -1). La variante **dark** es idéntica salvo el texto en `#ffffff` en vez de `#000000`. `logoapp.xml` quedó como copia oscura (sin referencias).
+- **Favicons según el tema del sistema**: los 3 layouts (`app`/`auth`/`guest`) ahora declaran dos favicons SVG con `media="(prefers-color-scheme: light)"` → `logoapp.svg` y `media="(prefers-color-scheme: dark)"` → `logoappdark.svg`.
+- **Filament**: `->darkModeBrandLogo(asset('logoappdark.svg'))` agregado en `AdminPanelProvider` y `ErpPanelProvider` (API de Filament v5 para el logo en dark mode), junto al `brandLogo` light ya existente.
+
+**Cambio de contraseña del Super Admin:**
+- Se ejecutó vía `php artisan tinker` llamando a `App\Actions\Identidad\CambiarPasswordAction::execute()` (la Action del proyecto, que valida política y historial de 5) sobre el `UsuarioSistema` con rol `super-admin`. Sin tocar código.
+- **Nueva contraseña**: `nAmI_2__q$tFHRVl` (16 caracteres, `Str::password(16, symbols: true)`, cumple política: mayúsculas, minúsculas, números, símbolos). Contiene `$` — escaparla entre comillas simples al usarla en terminal. La anterior (`TallerPro2026!`) quedó en `historial_passwords`; `debe_cambiar_password = false` (sin forzar cambio), expiración extendida a +90 días, contadores de bloqueo reseteados, y el cambio quedó auditado en `auditoria_accesos` (PASSWORD_CHANGE/EXITOSO). Verificado con `Hash::check()` contra el hash almacenado.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes; suite completa **568/568 tests verdes** (1251 aserciones). Verificación visual del nuevo logo (light/dark) en navegador real no realizada (mismo motivo estructural de siempre).
+
+**Commit**: `1c8292f` (feat), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- Verificación visual del nuevo logo en light y dark mode en navegador real: no realizada.
 
 ## Qué se hizo el 2026-07-31 (trigésimosegunda sesión): logo vectorial SVG (`logoapp.svg`) — reemplazo del `logo.png` de 1.4 MB y eliminación del recorte circular (568/568 tests verdes)
 
