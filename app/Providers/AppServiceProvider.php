@@ -8,6 +8,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -56,6 +57,12 @@ class AppServiceProvider extends ServiceProvider
         // siguiendo el mismo patrón documentado por Filament para integrar Livewire de terceros
         // en un render hook.
         Livewire::component('notificaciones-bell', NotificacionesBell::class);
+
+        // Localización a español: Carbon no sigue `config('app.locale')` automáticamente — sin
+        // esto, `translatedFormat()`/`diffForHumans()` (usados en reseñas y seguimiento de
+        // solicitudes) seguían mostrando meses/relativos en inglés aunque el resto de la UI ya
+        // estuviera en español.
+        Carbon::setLocale(config('app.locale'));
 
         $this->configurarRateLimiters();
 

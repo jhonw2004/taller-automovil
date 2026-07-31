@@ -90,10 +90,10 @@ class AuditoriaAccesoResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('tipo_acceso')->options([
-                    'LOGIN' => 'Login',
-                    'LOGOUT' => 'Logout',
+                    'LOGIN' => 'Inicio de sesión',
+                    'LOGOUT' => 'Cierre de sesión',
                     'PASSWORD_CHANGE' => 'Cambio de contraseña',
-                    'FAILED_LOGIN' => 'Login fallido',
+                    'FAILED_LOGIN' => 'Inicio de sesión fallido',
                 ]),
                 SelectFilter::make('resultado')->options([
                     'EXITOSO' => 'Exitoso',

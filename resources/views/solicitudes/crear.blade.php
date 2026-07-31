@@ -186,7 +186,7 @@
             // Mapa (Leaflet, opcional): clic para marcar, o geolocalización del navegador.
             const map = L.map('map').setView([-17.7833, -63.1821], 12);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
+                attribution: '&copy; colaboradores de OpenStreetMap',
                 maxZoom: 19,
             }).addTo(map);
 
