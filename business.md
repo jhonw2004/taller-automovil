@@ -230,7 +230,7 @@ Tres tipos de registros inmutables (append-only, nunca se editan ni borran):
 
 Tres layouts que envuelven las páginas del marketplace según el contexto del usuario:
 
-- **`marketplace/layouts/guest.blade.php`**: usado para páginas sin autenticación (login/register). Fondo `bg-paper`, contenido centrado vertical y horizontalmente. Favicon con `logo.png`. Carga `app.css` y `app.js` vía Vite.
+- **`marketplace/layouts/guest.blade.php`**: usado para páginas sin autenticación (login/register). Fondo `bg-paper`, contenido centrado vertical y horizontalmente. Favicon con `logoapp.svg`. Carga `app.css` y `app.js` vía Vite.
 
 - **`marketplace/layouts/auth.blade.php`**: extiende `guest` y agrega la navegación completa: nav superior con logo y enlaces, contenedor de toasts Alpine (`toast-container`), barra de saludo "Hola, {nombre}" con enlace al dashboard, alertas de sesión flash (`session('status')`/`session('error')`), y footer.
 

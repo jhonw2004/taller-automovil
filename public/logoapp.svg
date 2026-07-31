@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 170" width="480" height="170">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#20456E"/>
+      <stop offset="100%" stop-color="#0D1B2A"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A2B"/>
+      <stop offset="100%" stop-color="#E85D04"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#2E5C8A"/>
+      <stop offset="100%" stop-color="#0D1B2A"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ===== Insignia ===== -->
+  <g transform="translate(10, 10)">
+    <rect x="0" y="0" width="150" height="150" rx="32" fill="url(#glow)"/>
+    <rect x="0" y="0" width="150" height="150" rx="32" fill="none" stroke="#3E6C99" stroke-width="1.5" opacity="0.5"/>
+
+    <!-- Línea de "carretera" y movimiento -->
+    <g stroke="#3E6C99" stroke-width="3" stroke-linecap="round" opacity="0.55">
+      <line x1="14" y1="118" x2="30" y2="118"/>
+      <line x1="36" y1="118" x2="58" y2="118"/>
+    </g>
+    <line x1="14" y1="128" x2="120" y2="128" stroke="#254568" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- Líneas de velocidad -->
+    <g stroke="#5A85AE" stroke-width="3" stroke-linecap="round" opacity="0.6">
+      <line x1="10" y1="55" x2="24" y2="55"/>
+      <line x1="10" y1="65" x2="20" y2="65"/>
+    </g>
+
+    <!-- ===== Automóvil ===== -->
+    <g transform="translate(14, 48)">
+      <!-- sombra -->
+      <ellipse cx="55" cy="68" rx="52" ry="7" fill="#000000" opacity="0.25"/>
+
+      <!-- carrocería -->
+      <path d="M6,42
+               Q6,34 14,34
+               L28,34
+               Q35,17 52,17
+               L78,17
+               Q90,17 98,29
+               L112,29
+               Q124,29 128,38
+               L128,42
+               Q134,42 134,49
+               L134,54
+               L2,54
+               L2,49
+               Q2,42 6,42 Z"
+            fill="#F4F6F8"/>
+
+      <!-- ventanas -->
+      <path d="M34,34 Q40,22 53,22 L74,22 Q82,22 88,29 L92,34 Z"
+            fill="#0D1B2A" opacity="0.85"/>
+      <line x1="63" y1="22" x2="63" y2="34" stroke="#F4F6F8" stroke-width="2"/>
+
+      <!-- faro -->
+      <circle cx="124" cy="40" r="4" fill="url(#accentGrad)"/>
+      <!-- franja lateral -->
+      <rect x="14" y="45" width="112" height="4" fill="url(#accentGrad)" opacity="0.9"/>
+
+      <!-- ruedas -->
+      <circle cx="30" cy="56" r="11" fill="#0D1B2A"/>
+      <circle cx="30" cy="56" r="4.5" fill="#F4F6F8"/>
+      <circle cx="106" cy="56" r="11" fill="#0D1B2A"/>
+      <circle cx="106" cy="56" r="4.5" fill="#F4F6F8"/>
+    </g>
+
+    <!-- ===== Teléfono con pin de mapa ===== -->
+    <g transform="translate(94, 82)">
+      <rect x="0" y="0" width="52" height="76" rx="11" fill="#F4F6F8" stroke="#0D1B2A" stroke-width="2"/>
+      <rect x="5" y="8" width="42" height="54" rx="4" fill="url(#bgGrad)"/>
+      <rect x="20" y="66" width="12" height="3" rx="1.5" fill="#B7C4D1"/>
+
+      <!-- mini calles en la pantalla -->
+      <g stroke="#2E5C8A" stroke-width="1.5" opacity="0.7">
+        <line x1="9" y1="20" x2="43" y2="20"/>
+        <line x1="9" y1="48" x2="43" y2="48"/>
+        <line x1="16" y1="12" x2="16" y2="58"/>
+      </g>
+
+      <!-- pin de mapa -->
+      <g transform="translate(26, 33)">
+        <circle cx="0" cy="18" rx="7" r="4" fill="#000000" opacity="0.25"/>
+        <path d="M0,-14 C8,-14 14,-8 14,0 C14,10 0,24 0,24 C0,24 -14,10 -14,0 C-14,-8 -8,-14 0,-14 Z"
+              fill="url(#accentGrad)" stroke="#F4F6F8" stroke-width="1.5"/>
+        <circle cx="0" cy="-1" r="5" fill="#F4F6F8"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ===== Texto ===== -->
+  <g transform="translate(182, 10)">
+    <text x="0" y="82" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800" fill="#0D1B2A">
+      Taller<tspan fill="#E85D04">Pro</tspan>
+    </text>
+    <text x="2" y="104" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="500" letter-spacing="2" fill="#3E6C99">
+      TALLERES MECÁNICOS
+    </text>
+    <rect x="2" y="116" width="160" height="4" rx="2" fill="url(#accentGrad)"/>
+  </g>
+</svg>
