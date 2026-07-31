@@ -1,6 +1,29 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-30 (trigésima-primera sesión: rediseño de la búsqueda estilo Apple Maps + perfil público del taller, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimosegunda sesión: logo vectorial `logoapp.svg` reemplaza al `logo.png` de 1.4 MB, sin recorte circular, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimosegunda sesión): logo vectorial SVG (`logoapp.svg`) — reemplazo del `logo.png` de 1.4 MB y eliminación del recorte circular (568/568 tests verdes)
+
+El usuario preguntó primero por qué el proyecto tardaba en cargar (respuesta diagnóstica sin tocar código: `APP_ENV=local`/`APP_DEBUG=true` sin caches compiladas, debugbar activo en dev, `CACHE_STORE=database`, y como principal factor de descarga el `public/logo.png` de ~1.4 MB sin optimizar servido 3 veces por página — favicon + nav + footer; en producción se resuelve con `config:cache`/`route:cache`/`view:cache`, OPcache, gzip/brotli y `APP_DEBUG=false`) y pidió crear un logo vectorial que reemplazara al PNG. Se creó el SVG, luego se renombró a `logoapp.svg`/`logoapp.xml` por pedido del usuario, y finalmente el usuario reemplazó el archivo por un diseño propio (insignia auto + teléfono con pin de mapa + wordmark "TallerPro", 480×170, fondo transparente) que se integró **sin recorte circular**.
+
+**Cambios:**
+- **`public/logo.svg` (nuevo, 772 B, reemplazado después)**: insignia circular con gradiente obsidian→graphite (paleta Awesomic), pin tipo mapa en ember `#ff5a00` con cerradura oscura — mismo concepto pin+llave del PNG original, vectorial. Validado como XML.
+- **Renombrado por pedido del usuario** a `public/logoapp.svg` + `public/logoapp.xml` (mismo contenido, extensión `.xml`), con las referencias apuntando temporalmente a `logoapp.xml`.
+- **Nuevo `logoapp.svg` provisto por el usuario (4.3 KB, viewBox 480×170)**: insignia `rx=32` con gradiente azul (`#0D1B2A→#20456E→glow #2E5C8A`), auto blanco con faro/franja ember (`#FF8A2B→#E85D04`), teléfono con pantalla de "calles" y pin de mapa, wordmark "TallerPro" (Arial negrita, `tspan` ember) + tagline "TALLERES MECÁNICOS" + subrayado ember. `logoapp.xml` sincronizado al contenido nuevo.
+- **Sin border radius en el contenedor del logo**: eliminados `rounded-icons` + `object-cover` del `<img>` de nav/footer (ese token de 40px de radio recortaba el logo en círculo, pensado para el PNG con fondo glow). Ahora `h-40 w-auto` (nav) / `h-32 w-auto` (footer) — el logo ancho respeta su relación de aspecto (480/170 ≈ 2.82:1).
+- Todas las referencias apuntan a **`logoapp.svg`**: favicon de los 3 layouts (`type="image/svg+xml"`), `nav.blade.php`, `footer.blade.php`, `brandLogo`/`favicon` de ambos PanelProviders.
+- **Texto duplicado eliminado**: el nuevo logo ya incluye el wordmark, así que se quitaron los spans "TallerPro" de nav/footer y `->brandName('TallerPro')` de ambos paneles (Filament habría mostrado el texto junto a un logo que ya lo trae).
+- **`public/logo.png` eliminado** (1.4 MB, trackeado desde la vigesimosegunda sesión). `business.md` actualizado (favicon `logoapp.svg`).
+- Peso por página del marketplace: de ~4.2 MB (1.4 MB × 3) a ~4.3 KB totales.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes; suite completa **568/568 tests verdes** (1251 aserciones, ~8.5 min); smoke test con `php artisan serve` + `curl`: `/` → 200 con 3 referencias a `logoapp.svg` y 0 a `logoapp.xml`/`logo.png`/`rounded-icons object-cover`; `GET /logoapp.svg` → 200 `image/svg+xml` (4342 B); `logo.png`/`logo.svg` → 404. Verificación visual en navegador real no realizada (mismo motivo estructural de todas las sesiones).
+
+**Commit**: `488d5cd` (feat), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- Verificación visual en navegador real del nuevo logo: no realizada.
+- La optimización de tiempos de carga más allá del logo (caches compiladas, OPcache, gzip) es configuración de despliegue en producción, no hay nada pendiente en el código.
 
 ## Qué se hizo el 2026-07-30 (trigésima-primera sesión): rediseño de `/talleres/buscar` estilo Apple Maps + perfil público del taller (`workshops/show`) — 568/568 tests verdes
 
