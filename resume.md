@@ -1,6 +1,29 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-31 (trigésimocuarta sesión: implementación completa de `020-seguridad-produccion` — hardening pre-producción, 592/592 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimoquinta sesión: fix de expiración de sesión en paneles Filament — 2 bugs reales corregidos, acceso al panel de mi taller en Home/nav, 594/594 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimoquinta sesión): corrección de expiración de sesión en los paneles Filament (2 bugs reales) + acceso al panel del taller desde el marketplace (594/594 tests verdes)
+
+Se corrigieron 2 bugs reales de la feature `001-identidad-autenticacion`/`008-empleados-usuarios-erp` alrededor de `CheckSessionExpiration` (el middleware de cierre de sesión por inactividad), que afectaban la experiencia de login/expiración de los paneles `/erp` y `/admin`. Además se agregó acceso al login del panel desde el marketplace público.
+
+**Bug real #1 — redirección de expiración siempre a `/erp/login`:** el middleware hardcodeaba `Filament::getPanel('erp')->getLoginUrl()`, así que cuando la sesión expiraba dentro de `/admin`, el Super Admin era redirigido al login del panel equivocado. Corregido en `app/Http/Middleware/CheckSessionExpiration.php` con `Filament::getCurrentOrDefaultPanel()->getLoginUrl()` — redirige al login del panel donde realmente expiró la sesión (el `->default()` de `AdminPanelProvider` es `admin`, verificado en el test).
+
+**Bug real #2 — sesión cerrada inmediatamente tras un login exitoso:** `sistema_last_activity` solo se escribía dentro de `CheckSessionExpiration`, nunca al loguearse. Un valor viejo (de una sesión previa ya expirada) sobrevivía a `session()->regenerate()` del login, y la siguiente request autenticada se trataba como "expirada por inactividad" — el usuario quedaba atrapado en un loop login→logout. Corregido en `app/Listeners/Auditoria/RegistrarAccesoListener.php`: `handleLogin()` ahora resetea `sistema_last_activity` con `now()` cuando el guard es `sistema`.
+
+**Acceso al panel desde el marketplace (solicitud del usuario):**
+- `resources/views/marketplace/home.blade.php`: sección nueva "¿Ya trabajas en un taller registrado?" — card con ícono de edificio + descripción y botón primary a `route('filament.erp.auth.login')`. Separada deliberadamente de "Registra tu taller" (esa es para talleres nuevos sin cuenta). El panel `/admin` no tiene enlace público a propósito (solo por URL directa).
+- `resources/views/components/marketplace/nav.blade.php`: agregado link "Ingresar a mi taller" → `route('filament.erp.auth.login')`.
+
+**Tests (2 nuevos en `tests/Feature/Identidad/SesionExpiracionTest.php`):** regresión del bug #1 (verifica que con `getCurrentOrDefaultPanel()` y el default `admin` el `Location` contiene `/admin/login` y no `/erp/login` en un test aislado sin `SetUpPanel`) y del bug #2 (login real vía `auth('sistema')->attempt()` con un `sistema_last_activity` viejo en sesión — el timestamp queda reseteado a <2 segundos).
+
+**Verificación:** `vendor/bin/pint --dirty` sin pendientes; **suite completa 594/594 tests verdes** (592 previos + 2 nuevos, 1311 aserciones). Verificación visual en navegador real no realizada (mismo motivo estructural de siempre).
+
+**Commit:** (ver commit de esta sesión abajo), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- Sección E (backups) de `020-seguridad-produccion` sigue **bloqueada** esperando decisión del usuario (destino local/S3; `spatie/laravel-backup` vs. script `pg_dump`+cron con retención de 14 días) — por eso `020` sigue en `status: draft`. Es el único pendiente documentado en `specs/`.
+- Verificación visual en navegador real de la nueva sección del Home y del link en nav: no realizada (mismo motivo estructural de siempre).
 
 ## Qué se hizo el 2026-07-31 (trigésimocuarta sesión): `020-seguridad-produccion` implementado completo — rate limiting centralizado, cabeceras HTTP, subida de archivos acotada, rol de BD de mínimo privilegio, `security:check-produccion`, suite anti-IDOR (592/592 tests verdes)
 
