@@ -1,6 +1,33 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-30 (trigésima sesión: refinamientos UX post-019 — feedback de usuario aplicado sobre mapa/búsqueda, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-30 (trigésima-primera sesión: rediseño de la búsqueda estilo Apple Maps + perfil público del taller, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-30 (trigésima-primera sesión): rediseño de `/talleres/buscar` estilo Apple Maps + perfil público del taller (`workshops/show`) — 568/568 tests verdes
+
+El usuario pidió commit+push del working tree y actualización de `resume.md`. Antes de commitear se revisaron las diferencias pendientes: 8 archivos con un rediseño completo de la experiencia de búsqueda/mapa que no se habían commiteado, más el documento nuevo `buscartallerui.md`. Todos son cambios de UI/UX (blade/css/js), sin tocar lógica de negocio, modelos, rutas ni API.
+
+**Rediseño de búsqueda estilo Apple Maps** (supera la dirección de la sesión anterior — sidebar acoplado al borde, sin esquinas redondeadas — por pedido explícito del usuario de que la vista se sienta como Apple Maps real manteniendo la paleta del proyecto):
+
+- **`buscartallerui.md` (nuevo)**: spec de UI de referencia para `/talleres/buscar`, **v2** (la v1 documentaba el sidebar acoplado sin bordes). Mapea el prompt original a los componentes/stack reales del proyecto (sin Inertia; Blade + Alpine + `Alpine.store('search')` + `GET /api/talleres/search` + layout `app-shell`). Documenta una **trampa real encontrada**: `app.css` define `--spacing-4/8/12/.../120` como `@theme` explícitos; cualquier utilidad numérica fuera de esa lista (ej. `size-18`, `px-14`) cae al `--spacing` base (`0.25rem`) y genera un tamaño completamente distinto al esperado sin error. Se corrigieron varios casos reales (`size-18`→`size-20`, `px-14`→`px-16`, `gap-6`→`gap-8`). Regla: solo usar números de esa escala o sintaxis arbitraria (`size-[18px]`).
+- **`components/marketplace/search-filters.blade.php`**: buscador rediseñado estilo Apple Maps — campo de búsqueda prominente siempre visible (lupa a la izquierda, botón de limpiar visible solo con texto), filtros secundarios (categoría, calificación mínima, "abierto ahora", "usar mi ubicación") **colapsados detrás de un botón de filtro** (ícono de sliders) con panel `rounded-cards`/`bg-paper` que se abre/cierra con transición. **El filtro de radio de búsqueda (slider en km) se eliminó de la UI** por pedido explícito ("la búsqueda por radio no es necesaria"); `Alpine.store('search').radius` conserva un valor fijo (10 km) para no romper el contrato del endpoint, que solo lo aplica cuando hay `lat`/`lon`. Los controles usan los tokens normales del design system (`rounded-inputs`, `rounded-buttons`) — ya no es la única vista con la excepción de "sin bordes redondeados".
+- **`marketplace/search/map-experience.blade.php`**: el panel de escritorio vuelve a ser **tarjeta flotante con margen respecto a los bordes del mapa** (`left-16 top-16 bottom-16`, `w-[380px]`, `rounded-cards`, `border border-cloud`, `shadow-lg`) — reemplaza el sidebar acoplado sin bordes de la trigésima sesión. Hoja móvil y card de detalle con `rounded-t-cards`. Agregado `:aria-expanded` a los botones de colapsar/expandir el panel y al *drag handle* de la hoja. `size-18`→`size-20` (trampa de escala de espaciado).
+- **`components/marketplace/map.blade.php` + `resources/js/alpine/components/map.js`**: los controles de zoom (+/−) ahora **se deshabilitan en los límites** de Leaflet (`:disabled` + `disabled:opacity-40`, estados `zoomLevel`/`minZoom`/`maxZoom` expuestos por `Alpine.data('map')` y actualizados en el evento `zoomend`). `singleMap()` (mapa del perfil de taller) también deshabilita `zoomControl: false`.
+- **`marketplace/search/_results-list.blade.php`**: navegación por **teclado con flechas arriba/abajo** entre filas de resultado (`x-on:keydown.down/up.prevent`, mueve el foco al botón hermano), hover-lift sutil (`hover:-translate-y-4` + `hover:shadow-md`, `transition duration-300`), empty state sin referencia al radio de búsqueda.
+
+**Perfil público del taller (`marketplace/workshops/show.blade.php`, rediseño):** cabecera en banda blanca con link "Volver a la búsqueda", badge "Abierto ahora"/"Cerrado" (`Taller::estaAbiertoAhora()`), calificación, dirección con ícono, categorías y botón de favorito; fila de acciones rápidas (Llamar `tel:`, Enviar email `mailto:`, Cómo llegar a Google Maps). Secciones reorganizadas como `<x-card>`: "Sobre este taller", Horarios con el día actual resaltado con badge "Hoy" (`dayOfWeekIso`), "Contacto" (dirección/teléfono/email con íconos). Mapa con spinner de carga de tiles y `z-0` para el stacking context.
+
+**`resources/css/app.css`**: el popup de Leaflet (`.taller-popover`) vuelve a `border-radius: var(--radius-cards)` (consistente con la tarjeta flotante rediseñada) + `overflow: hidden`.
+
+**Verificación**: `vendor/bin/pint --dirty` sin pendientes, `npm run build` sin errores, **568/568 tests verdes** (1251 aserciones). Nota sobre una corrida anterior: un deadlock transitorio de Postgres en `auditoria_talleres` interrumpió el `migrate:fresh` y produjo 8 fallos espurios en `AnularOrdenTrabajoActionTest` ("no existe la relación talleres"); el archivo pasó aislado (12/12) y la suite completa volvió a dar 568/568 — flakiness de infraestructura, no relacionada con estos cambios (solo vistas/css/js). Smoke test no realizado (mismo motivo estructural de siempre).
+
+**Commit**: `3cf5306` ("feat: rediseno busqueda estilo Apple Maps + perfil de taller…"), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- **Evaluación de producto abierta** (documentada en `buscartallerui.md`, no es una brecha técnica): si conviene un botón "Limpiar filtros" en la cabecera del panel cuando hay filtros activos.
+- Verificación visual en navegador real: nunca se ha hecho en todo el proyecto (limitación estructural del entorno).
+
+## Qué se hizo el 2026-07-30 (trigésima sesión): refinamientos UX post-019 — sidebar edge-to-edge, bordes rectos, delegación de eventos, stacking context (sin nuevos tests, 568/568 verdes)
 
 ## Qué se hizo el 2026-07-30 (trigésima sesión): refinamientos UX post-019 — sidebar edge-to-edge, bordes rectos, delegación de eventos, stacking context (sin nuevos tests, 568/568 verdes)
 
