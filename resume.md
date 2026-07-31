@@ -1,6 +1,44 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-31 (trigésimoquinta sesión: fix de expiración de sesión en paneles Filament — 2 bugs reales corregidos, acceso al panel de mi taller en Home/nav, 594/594 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimosexta sesión: dashboards de métricas por rol — widgets de estadísticas ERP acotados por permisos y widgets de plataforma exclusivos del Super Admin — + localización completa a español, 609/609 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimosexta sesión): dashboards de métricas por rol (ERP + Admin) y localización a español de toda la app (609/609 tests verdes)
+
+El usuario pidió darle métricas útiles a los dashboards de Filament (`/erp` y `/admin`), que hasta ahora mostraban solo `AccountWidget` + `TenantSwitcher` (ERP) y `AccountWidget` (Admin), y localizar la aplicación a español (era `APP_LOCALE=en` de fábrica). Se implementaron 8 widgets nuevos de dashboard y se tradujo toda la app. Sin spec nuevo en `specs/` — trabajo directo del usuario sobre features ya `implemented` (`001`–`015`).
+
+**A. Dashboard ERP (`/erp`) — 5 widgets de estadísticas acotados por permisos (`canView()` vía `tienePermiso()`, datos aislados por `BelongsToTaller`/`session('taller_activo_id')`, `$isLazy = false`):**
+- `ClientesVehiculosStatsWidget` — "Clientes activos" + "Vehículos registrados" (`clientes.ver` o `vehiculos.ver`).
+- `EmpleadosStatsWidget` — "Empleados activos" (`empleados.ver`).
+- `InventarioStatsWidget` — "Repuestos activos" + "Con stock bajo" (cuenta `stock_actual <= stock_minimo`; color danger/success según exista) (`inventario.ver` o `repuestos.ver`).
+- `OrdenesTrabajoStatsWidget` — "Órdenes pendientes" (PENDIENTE/EN_DIAGNOSTICO/ESPERANDO_APROBACION), "En progreso" (EN_PROGRESO/PAUSADA) y "Completadas este mes" (COMPLETADA/ENTREGADA) (`ordenes.ver`).
+- `VentasStatsWidget` — "Ventas del mes" (excluye ANULADA), "Cobrado este mes" y "Notas pendientes de pago" (`notas.ver`).
+- Un mismo dashboard renderiza tarjetas distintas según el rol: mecánico ve órdenes+inventario, cajero ve ventas+clientes, owner ve todo, etc.
+
+**B. Dashboard Admin (`/admin`) — 3 widgets exclusivos del Super Admin (`esSuperAdmin()`), consultas **sin** scope de tenant (plataforma completa):**
+- `PlataformaStatsWidget` (6 tarjetas: talleres activos, solicitudes por revisar PENDIENTE/EN_REVISION, talleres suspendidos, usuarios del sistema activos, calificación promedio con conteo de reseñas publicadas, categorías activas).
+- `TalleresPorCategoriaWidget` (ChartWidget de barras, top 8 categorías por talleres ACTIVOS vía `withCount`).
+- `SolicitudesPorEstadoWidget` (ChartWidget doughnut, distribución del histórico completo de solicitudes por estado).
+
+**C. Localización a español (antes `en` de fábrica):**
+- `config/app.php`: `name` default `TallerPro` (antes `Laravel`), `locale` → `es`, `fallback_locale` → `es`. `.env.example`/`.env.testing`: `APP_NAME=TallerPro`, `APP_LOCALE=es`, `APP_FALLBACK_LOCALE=es`.
+- `lang/es/{auth,pagination,passwords,validation}.php` (nuevos): traducciones nativas de Laravel para validación/auth/paginación que el framework no trae por defecto (Filament ya trae sus propios `resources/lang/es`).
+- `AppServiceProvider::boot()`: `Carbon::setLocale(config('app.locale'))` — sin esto, `translatedFormat()`/`diffForHumans()` (reseñas y seguimiento de solicitudes) seguían en inglés aunque la UI ya fuera en español.
+- Filtros de `AuditoriaAccesoResource` (Admin y ERP): labels traducidos ("Login"→"Inicio de sesión", "Logout"→"Cierre de sesión", "FAILED_LOGIN"→"Inicio de sesión fallido").
+- Atribución del mapa de `solicitudes/crear.blade.php`: "OpenStreetMap contributors" → "colaboradores de OpenStreetMap".
+
+**D. Infraestructura de tests:** `phpunit.xml` sube `memory_limit` a `512M` (la suite creció a +600 tests, cada uno arranca la app completa — Filament + Blade Icons — en el mismo proceso PHP; el default 128M de la CLI ya no alcanzaba, no es un leak de código).
+
+**E. Tests (15 nuevos en `tests/Feature/Sistema/`):** `MetricasErpWidgetsTest` (9: `canView()` por permiso en los 5 widgets, escenario de mecánico que solo ve órdenes+inventario, y conteos reales del taller activo — pendientes/en progreso, stock bajo, ventas del mes excluyendo anuladas), `MetricasAdminWidgetsTest` (4: solo Super Admin ve los 3 widgets — un owner con todos los permisos no — y conteos reales de plataforma/categorías/estados), `SmokeDashboardTest` (2: `GET /admin` y `GET /erp` autenticados renderizan los widgets). Los widgets se registran automáticamente por `discoverWidgets` (ya configurado en ambos `PanelProvider`).
+
+**Verificación:** `vendor/bin/pint --dirty` sin pendientes; **suite completa 609/609 tests verdes** (594 previos + 15 nuevos, 1352 aserciones). Verificación visual en navegador real no realizada (mismo motivo estructural de siempre).
+
+**Commit:** (ver commit de esta sesión abajo), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- Sección E (backups) de `020-seguridad-produccion` sigue **bloqueada** esperando decisión del usuario (destino local/S3; `spatie/laravel-backup` vs. script `pg_dump`+cron con retención de 14 días) — por eso `020` sigue en `status: draft`. Es el único pendiente documentado en `specs/`.
+- Verificación visual en navegador real de los dashboards con datos reales y de la traducción en navegación/validación: no realizada (mismo motivo estructural de siempre).
+- La localización aplica a mensajes del framework/Filament; los textos hardcodeados en vistas y Resources del proyecto están en español desde las sesiones anteriores — revisar puntualmente cualquier label que quede en inglés al navegar.
 
 ## Qué se hizo el 2026-07-31 (trigésimoquinta sesión): corrección de expiración de sesión en los paneles Filament (2 bugs reales) + acceso al panel del taller desde el marketplace (594/594 tests verdes)
 
