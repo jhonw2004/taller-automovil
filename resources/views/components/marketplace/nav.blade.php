@@ -11,6 +11,8 @@
         <nav class="hidden items-center gap-24 text-body text-graphite sm:flex">
             <a href="{{ route('talleres.buscar') }}" class="hover:text-obsidian">Buscar talleres</a>
             <a href="{{ route('solicitudes.create') }}" class="hover:text-obsidian">Registra tu taller</a>
+            {{-- Acceso para personal ya registrado (ver home.blade.php para el contexto completo). --}}
+            <a href="{{ route('filament.erp.auth.login') }}" class="hover:text-obsidian">Ingresar a mi taller</a>
         </nav>
 
         <div class="flex items-center gap-12">

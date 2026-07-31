@@ -44,6 +44,31 @@
         </div>
     </section>
 
+    {{-- Acceso para personal de talleres ya registrados (staff/dueño con usuario del sistema).
+         Sección propia y separada de "Registra tu taller" (esa es para talleres nuevos, sin
+         cuenta todavía) — este botón lleva directo al login de /erp. El panel de Super Admin
+         (/admin) no tiene enlace público a propósito: solo se accede por URL directa. --}}
+    <section class="reveal border-b border-cloud bg-white">
+        <div class="mx-auto max-w-[1200px] px-16 py-24 sm:px-24 lg:px-16">
+            <div class="flex flex-col items-center justify-between gap-20 rounded-cards border border-cloud bg-paper p-24 sm:flex-row">
+                <div class="flex items-center gap-16">
+                    <span class="flex size-48 shrink-0 items-center justify-center rounded-cards bg-obsidian text-white">
+                        <svg class="size-24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m-1 4h1m4-4h1m-1 4h1M9 21v-4a3 3 0 013-3 3 3 0 013 3v4" />
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="text-subheading font-semibold text-graphite">¿Ya trabajas en un taller registrado?</p>
+                        <p class="mt-4 text-body text-fog">Ingresa con tu usuario del sistema para gestionar clientes, vehículos, inventario y órdenes de trabajo.</p>
+                    </div>
+                </div>
+                <x-button :href="route('filament.erp.auth.login')" variant="primary" class="shrink-0">
+                    Ingresar al panel de mi taller
+                </x-button>
+            </div>
+        </div>
+    </section>
+
     {{-- Cómo funciona: propuesta de valor para quien busca un taller. --}}
     <section class="reveal mx-auto max-w-[1200px] px-16 py-48 sm:px-24 md:py-64 lg:px-16">
         <h2 class="text-heading-sm font-semibold text-graphite">Cómo funciona</h2>

@@ -31,7 +31,9 @@ class CheckSessionExpiration
             Auth::guard('sistema')->logout();
             $request->session()->regenerate();
 
-            return redirect(Filament::getPanel('erp')->getLoginUrl())
+            // Bug real corregido 2026-07-31: redirigía siempre a /erp/login, incluso cuando la
+            // sesión expiraba dentro de /admin — el Super Admin terminaba en el login equivocado.
+            return redirect(Filament::getCurrentOrDefaultPanel()->getLoginUrl())
                 ->with('error', 'Sesión expirada por inactividad');
         }
 

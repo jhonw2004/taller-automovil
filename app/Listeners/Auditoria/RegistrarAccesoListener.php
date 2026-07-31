@@ -25,6 +25,14 @@ class RegistrarAccesoListener
 {
     public function handleLogin(Login $event): void
     {
+        if ($event->guard === 'sistema') {
+            // Bug real corregido 2026-07-31: sin este reseteo, un `sistema_last_activity` viejo
+            // (de una sesión previa expirada) sobrevivía al `session()->regenerate()` del login y
+            // `CheckSessionExpiration` cerraba la sesión recién iniciada en la siguiente request,
+            // como si ya hubiera expirado por inactividad.
+            session()->put('sistema_last_activity', now());
+        }
+
         app(RegistrarAccesoAuditoriaAction::class)->execute(
             tipoAcceso: 'LOGIN',
             resultado: 'EXITOSO',
