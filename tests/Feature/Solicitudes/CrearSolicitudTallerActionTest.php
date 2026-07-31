@@ -45,6 +45,9 @@ it('no expone el id interno a través del token', function () {
         'taller_nombre' => 'Taller El Rayo',
     ]);
 
-    expect($solicitud->token_publico)->not->toBe((string) $solicitud->id)
-        ->and($solicitud->token_publico)->not->toContain((string) $solicitud->id);
+    // `Str::uuid()` genera un UUID v4 aleatorio: la aserción de "no contiene el id" como subcadena
+    // es una falsa alarma (un UUID puede contener cualquier subcadena numérica por casualidad, ej.
+    // id=29 y `...-29e0-...`). Lo relevante es que el token sea un UUID real distinto del id.
+    expect($solicitud->token_publico)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/')
+        ->and($solicitud->token_publico)->not->toBe((string) $solicitud->id);
 });
