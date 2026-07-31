@@ -1,6 +1,56 @@
 # Resume — Estado del proyecto y trabajo realizado
 
-Última actualización: 2026-07-31 (trigésimotercera sesión: rediseño del logo + soporte dark mode `logoappdark.svg` + cambio de contraseña del Super Admin, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+Última actualización: 2026-07-31 (trigésimocuarta sesión: implementación completa de `020-seguridad-produccion` — hardening pre-producción, 592/592 tests verdes, commit+push). Este archivo existe para que cualquier agente (o persona) pueda retomar el trabajo sin releer toda la conversación anterior.
+
+## Qué se hizo el 2026-07-31 (trigésimocuarta sesión): `020-seguridad-produccion` implementado completo — rate limiting centralizado, cabeceras HTTP, subida de archivos acotada, rol de BD de mínimo privilegio, `security:check-produccion`, suite anti-IDOR (592/592 tests verdes)
+
+Se implementó íntegramente el spec transversal `020-seguridad-produccion` (hardening de seguridad pre-producción). El spec quedó en `status: draft` a propósito (ver "Qué queda pendiente" abajo: la sección E de backups sigue **bloqueada** esperando la decisión del usuario sobre el destino local/S3/paquete vs. script). La implementación se verificó contra el estado real del código antes de escribir nada (la auditoría del spec confirmó los 9 gaps), y **se corrigieron 2 bugs reales no hipotéticos** encontrados por los tests (uno de ellos rompía el boot completo de la app).
+
+**A. Rate limiting centralizado (antes: ninguna ruta pública de `web.php` tenía `throttle`):**
+- 5 limiters nombrados en `AppServiceProvider::boot()` (`configurarRateLimiters()`): `publico-lectura` (60/min por IP), `publico-escritura` (5/min por IP), `busqueda-api` (30/min por IP), `marketplace-escritura` (10/min por usuario `web` o IP), `notificaciones` (30/min por usuario de cualquier guard o IP).
+- `routes/web.php`: throttles aplicados a las 4 rutas de `solicitudes-taller` (create/seguramente/store/cancelar), `talleres.buscar` y `talleres.show`. `routes/api.php` migrado de literales `throttle:30,1`/`throttle:10,1` a los limiters nombrados (mismos valores). Login de Filament intacto (rate limit nativo 5/60s, sin duplicación).
+- Smoke test real (`php artisan serve` + `curl` con CSRF): 5 requests a `POST /solicitudes-taller` pasan, la 6ª devuelve `429`.
+
+**Bug real #1 (encontrado por los tests, corregido):** `token_publico` es una columna `uuid` nativa de Postgres pero las rutas `/solicitudes-taller/{token}` no restringían el formato — un segmento no-UUID (ej. `/solicitudes-taller/abc`) llegaba hasta `where('token_publico', ...)` y Postgres rechazaba la query (`invalid input syntax for type uuid`), un `PDOException` sin capturar → **500 crudo en vez del 404 esperado**. Corregido con `->whereUuid('token')` en ambas rutas.
+
+**B. Límites de tamaño y agotamiento de recursos:**
+- `FileUpload::make('logo_url')` en `TallerResource.php`: agregado `->maxSize(2048)` (2 MB) + `->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])` (antes el único tope era PHP a nivel de servidor).
+- **Hallazgo real no anticipado en el plan original**: `GET /api/talleres/search` no tenía límite — `$query->get()` devolvía **todos** los talleres visibles del marketplace en cada request. Corregido con tope duro `MAX_RESULTADOS = 100` en `TallerBusquedaApiController` (el contrato JSON `data`/`meta.total` no cambia).
+- Auditaron las tablas Filament: ninguna declara `->paginated(...)` explícito, todas usan el default seguro `[5, 10, 25, 50]` sin opción "all".
+- Runbook de despliegue documentado en `plan.md §B`: `request_terminate_timeout` (PHP-FPM), `proxy_read_timeout` (proxy), directiva Nginx para no ejecutar `.php` en `public/storage/`.
+
+**C. Cabeceras de seguridad y transporte (antes: ninguna en ninguna respuesta):**
+- Nuevo `App\Http\Middleware\SecurityHeaders`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(self), camera=(), microphone=(), payment=()`, HSTS **solo** en producción, y CSP en modo `Content-Security-Policy-Report-Only` (decisión confirmada: no se activa bloqueante sin poder verificar en navegador real).
+- Registrado en `bootstrap/app.php` como middleware **global** (append), no solo del grupo `web` — cubre también `routes/api.php` (endpoints JSON públicos).
+- `URL::forceScheme('https')` condicionado a `app()->environment('production')` en `AppServiceProvider::boot()`.
+- `config/session.php`: `'secure' => env('SESSION_SECURE_COOKIE') ?? env('APP_ENV') === 'production'` — un despliegue nunca queda con cookies sin `Secure` por omisión.
+
+**Bug real #2 (encontrado corriendo la suite completa, no por lectura de código):** la primera versión de `config/session.php` usaba `app()->environment('production')` dentro del archivo de config — los archivos de config se cargan en `LoadConfiguration`, **antes** de que el contenedor registre el binding `env`, y resolver un servicio ahí rompía el boot entero (`Target class [env] does not exist`), los 568 tests fallaban idénticamente. Corregido a `env('APP_ENV')` directo, documentado en el propio archivo.
+- `.env.example`: `SESSION_LIFETIME` de `10080` (7 días) a `480` (8 horas), con comentario.
+
+**D. Base de datos: rol de mínimo privilegio:**
+- `.env.example`: `DB_USERNAME=taller_app` en vez de `root`, con comentario explicando el porqué.
+- Rol `taller_app` **creado de verdad** en el Postgres local (18.3/PostGIS 3.6.2) con `NOSUPERUSER NOCREATEDB NOCREATEROLE` + `statement_timeout = 30s` a nivel de rol, verificado con `psql` real.
+- **Hallazgo real confirmado empíricamente**: `CREATE EXTENSION postgis` desde cero **requiere superusuario** en esta instalación (no es una extensión "trusted") — confirma que la secuencia documentada (extensión una vez como superusuario, todo lo demás con el rol de aplicación) es un requisito real, no cautela.
+- `taller_test` reconstruida con `taller_app` como dueño; `.env.testing` quedó apuntando a `taller_app` de forma permanente (configuración correcta a futuro, no solo una prueba puntual). **Suite completa (592/592) verde contra el rol de mínimo privilegio.**
+
+**E. Backups:** **bloqueada** esperando decisión del usuario (ver "Qué queda pendiente"). Nada del resto del spec depende de esto.
+
+**F. Dependencias:** `composer audit` + `npm audit --audit-level=high` documentados en `README.md` como paso obligatorio pre-release (no hay CI todavía); corridos ambos contra el repo actual: **sin vulnerabilidades conocidas**.
+
+**G. Comando pre-despliegue:** `php artisan security:check-produccion` (`SecurityCheckProduccionCommand`) con 6 checks (`APP_DEBUG=false`, `APP_ENV=production`, `APP_URL` https, `SESSION_SECURE_COOKIE=true`, `LOG_LEVEL` no-debug, `DB_USERNAME` no root/postgres) — falla con exit ≠ 0 si algo no cumple, usable como gate bloqueante.
+
+**H. Tests (24 nuevos en `tests/Feature/Seguridad/`):** `RateLimitingTest.php` (429 real vía HTTP para `publico-escritura`, límites del resto verificados resolviendo el `Limit` registrado — 61/31 requests HTTP por test habría sido lento sin aportar garantía distinta; incluye la regresión del bug #1), `CabecerasSeguridadTest.php` (cabeceras en rutas web y api, HSTS solo en producción, CSP Report-Only), `MassAssignmentTest.php` (reflexión sobre todos los modelos de `app/Models/`, ninguno con `$guarded = []`), `SubidaArchivosTest.php` (verifica `getMaxSize()`/`getAcceptedFileTypes()` sobre el `Schema` real — no vía `Livewire::test()->fillForm()` porque ese Resource tiene una particularidad propia del harness de testing de Livewire en este entorno, confirmada también contra el código sin modificar), `AislamientoMultiTenantTest.php` (IDOR cross-taller **404 real vía HTTP** en 8 Resources operativos: clientes, vehículos, empleados, servicios, repuestos, proveedores, órdenes, notas — pagos no tiene Resource propio con página de edición, vive en un `RelationManager` de la nota padre, su aislamiento ya cubierto), `SecurityCheckProduccionCommandTest.php` (FAILURE/SUCCESS según config).
+
+**Verificación:** `vendor/bin/pint --dirty` sin pendientes; **suite completa 592/592 tests verdes** (568 previos + 24 nuevos, 1307 aserciones) contra el rol `taller_app` de mínimo privilegio; smoke test real de concurrencia (`429` bajo ráfaga contra el servidor corriendo). `memory/constitution.md §7` actualizado para referenciar este spec como fuente de verdad de rate limiting/cabeceras/backups/mínimo privilegio (sin duplicar el contenido).
+
+**Commit:** `35f1e31` (feat), pusheado a `origin/specs/planificacion`.
+
+### Qué queda pendiente tras esta sesión
+
+- **Sección E (backups) bloqueada** esperando decisión del usuario sobre el destino (local/S3; `spatie/laravel-backup` vs. script `pg_dump`+cron con retención de 14 días) — el resto del spec está completo. Por eso `spec.md` sigue en `status: draft` (el propio `tasks.md` exige resolver backups antes de marcarlo `implemented`).
+- Verificación visual en navegador real: no se hizo (mismo motivo estructural de todas las sesiones). La CSP `Report-Only` seguirá recolectando reportes reales; pasarla a bloqueante queda como trabajo futuro informado por ellos.
+- Pentesting profesional/2FA/MFA: fuera de alcance del MVP del spec (documentado como recomendaciones futuras).
 
 ## Qué se hizo el 2026-07-31 (trigésimotercera sesión): rediseño del logo + soporte dark mode (`logoappdark.svg`) y cambio de contraseña del Super Admin (568/568 tests verdes)
 
@@ -885,10 +935,13 @@ specs/
   011-ordenes-trabajo/
   012-notas-venta/
    013-pagos/
-   014-notificaciones/
-   015-auditoria/
-   016-ui-design-system/
-   017-infraestructura-sistema/
+  014-notificaciones/
+  015-auditoria/
+  016-ui-design-system/
+  017-infraestructura-sistema/
+  018-modernizacion-ui/
+  019-mapa-busqueda-ux/
+  020-seguridad-produccion/
 ```
 
 Cada carpeta de feature tiene:
@@ -896,7 +949,7 @@ Cada carpeta de feature tiene:
 - `plan.md` — CÓMO (tablas, columnas, constraints, modelos Eloquent, Actions, paquetes, Filament Resources).
 - `tasks.md` — checklist de tareas atómicas y verificables derivadas del plan.
 
-Las 17 features están numeradas por orden de dependencia (`depends_on` en el frontmatter). **Todas están en `status: implemented`** — el código completo de todas las features está implementado y probado.
+Las 20 features están numeradas por orden de dependencia (`depends_on` en el frontmatter). **Todas las del plan original (001–019) están en `status: implemented`** — el código completo de todas esas features está implementado y probado. `020-seguridad-produccion` está implementado en código y tests pero sigue en `status: draft` únicamente por la sección de backups bloqueada (ver arriba).
 
 ## Estado real del código
 
@@ -919,9 +972,10 @@ El proyecto Laravel ya no es un esqueleto:
 - **014-notificaciones** (decimosexta sesión): completo — tabla `notificaciones` (destinatario mutuamente excluyente `usuario_marketplace_id`/`usuario_sistema_id`), `Notificacion` + `CrearNotificacionAction`/`MarcarNotificacionLeidaAction`, 10 clases en `app/Notifications/` conectadas a sus 6 features origen (listeners nuevos sobre 3 eventos ya existentes de `006`/`010`/`013`, primer uso de Observers del proyecto para `orden.*`/`nota.emitida`, llamada directa en las Actions de `solicitud.*`/`usuario.creado`, comando programado diario para `password.expirada`), endpoint `POST /notificaciones/{id}/marcar-leida` (guard `web,sistema` combinado), campana Livewire en el topbar de `/admin`+`/erp` vía `renderHook`, sección en el dashboard marketplace. 2 bugs reales de manejo de excepciones JSON/redirect corregidos (`AuthenticationException::redirectUsing()` + `shouldRenderJsonWhen` ampliado en `bootstrap/app.php`). 40 tests nuevos.
 - **015-auditoria** (decimoséptima sesión, commiteado y pusheado en `27e6fab` en la decimoctava sesión): completo — **reemplazo total de `spatie/laravel-activitylog`** por tablas propias append-only. 3 migraciones (`auditoria_eventos`, `auditoria_accesos`, `auditoria_talleres`) + migración de drop de `activity_log`. Modelos append-only que bloquean `update()`/`delete()` vía `BusinessException`. 2 Actions centralizadas (`RegistrarEventoAuditoriaAction`/`RegistrarAccesoAuditoriaAction`). `TallerObserver` (cambios sensibles con pares old/new, dispara solo si `wasChanged()`). `RegistrarAccesoListener` (multi-handle sobre eventos nativos `Login`/`Logout`/`Failed`, ambos guards). `AuditarAccesoDenegadoFilament` middleware (reemplaza `Filament\Http\Middleware\Authenticate` en ambos paneles). 6 Resources Filament de solo lectura (`/erp` + `/admin`, cada uno filtra por taller activo o no). 12 Actions de 8 features anteriores migradas de `activity()` a la tabla propia. 3 gaps de auditoría cerrados (`AnularOrdenTrabajoAction`, `AsignarRolAction`, `RegistrarMovimientoInventarioAction` ajustes). Bug corregido en `BelongsToTaller::sinScope()` (guard incorrecto). 31 tests nuevos.
 - **Auditoría de consistencia** (decimonovena sesión, commiteado y pusheado en `55047a5` en la vigésima sesión): FK real de `orden_trabajo_id` en `resenas`, `Taller::contarEntidadesHijasActivas()` con primer consumidor real de `BelongsToTaller::sinScope()`, `UnidadMedidaSeeder`/`CategoriaSeeder` (lo que faltaba del seeding de `017`), 6 factories faltantes, tests de `SequentialCodeGenerator`/`TenantSwitcher`, desactivación por taller en `ActivarDesactivarUsuarioSistemaAction` (en vez de global), corrección de `tasks.md`/specs en todas las features. 16 tests nuevos.
-- **Total: 568/568 tests Pest verdes** (552 previos + 16 de la auditoría de consistencia), sin cambios en el conteo de esta sesión (refinamientos puramente visuales/JS). `laravel/pint --dirty` sin pendientes, `npm run build` sin errores.
+- **`020-seguridad-produccion`** (trigésimocuarta sesión, commiteado y pusheado en `35f1e31`): hardening de seguridad pre-producción — rate limiting centralizado nombrado (`RateLimiter::for(...)`, 5 limiters), cabeceras HTTP globales (`SecurityHeaders` middleware, CSP `Report-Only`, HSTS solo producción), `URL::forceScheme('https')`, `SESSION_SECURE_COOKIE` default `true` en producción + `SESSION_LIFETIME` 8h, `FileUpload` de logo con `maxSize(2048)`/whitelist mime, tope de 100 resultados en `GET /api/talleres/search`, rol `taller_app` de mínimo privilegio en BD, comando `security:check-produccion`, `composer audit`/`npm audit` documentados, suite anti-IDOR cross-taller (8 Resources). 2 bugs reales corregidos (`whereUuid` en rutas de token; `env('APP_ENV')` en `config/session.php` que rompía el boot). **Sección E (backups) bloqueada esperando decisión del usuario** — spec sigue en `draft`. 24 tests nuevos.
+- **Total: 592/592 tests Pest verdes** (568 previos + 24 de `020-seguridad-produccion`, 1307 aserciones), contra el rol `taller_app` de mínimo privilegio. `laravel/pint --dirty` sin pendientes.
 - **Prototipo Taller viejo**: ya reemplazado por la migración de `003` (`2026_07_26_060001_replace_talleres_table.php`). El `TalleresSeeder` (importador de GeoJSON de OSM, no registrado en `DatabaseSeeder`) se actualizó para no romper con el esquema nuevo. La ruta/controlador prototipo `GET /api/talleres` (`TallerController@index`) y `welcome.blade.php` se **eliminaron** en la séptima sesión, reemplazados por el home real y `GET /api/talleres/search`.
-- Git: repositorio en rama `specs/planificacion`. Todo el código de las 19 features está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab` → `2020912` → `55047a5` → `aa05f29` → `11374db` → `b2a7b59` → `adb4500` → `b75e577` → `7a34e15` → `fe04166`).
+- Git: repositorio en rama `specs/planificacion`. Todo el código de las features está commiteado y pusheado en `origin/specs/planificacion` (`eca323c` → `08c2d90` → `dee42c2` → `96bce0d` → `c42d59e` → `b31d74e` → `e8aed6c` → `b8802c3` → `a604bd3` → `4da1c16` → `c8a9bb5` → `a126403` → `76a1e7a` → `b7e59be` → `dbe231e` → `d5d8f14` → `e4d14fa` → `d83b268` → `27e6fab` → `2020912` → `55047a5` → `aa05f29` → `11374db` → `b2a7b59` → `adb4500` → `b75e577` → `7a34e15` → `fe04166` → `1c8292f` → `35f1e31`).
 
 ## Decisiones resueltas (2026-07-25)
 
@@ -988,8 +1042,9 @@ El proyecto Laravel ya no es un esqueleto:
 25. ~~Spec `018-modernizacion-ui` + rediseño del Home~~ **Hecho** (vigesimotercera sesión, código implementado).
 26. ~~`business.md` con lógica de negocio y estructura de vistas~~ **Hecho** (vigesimocuarta sesión).
 27. ~~Ampliación de `018-modernizacion-ui`: 2 secciones Home, animación scroll-reveal, footer columnas, migración formulario solicitud~~ **Hecho** (vigesimoquinta sesión, código implementado).
+28. ~~Implementar `020-seguridad-produccion`~~ **Hecho en código y tests** (trigésimocuarta sesión, commit `35f1e31`): rate limiting, cabeceras HTTP, subida acotada, mínimo privilegio de BD, `security:check-produccion`, anti-IDOR. **Pendiente para cerrar el spec:** sección E de backups (esperando decisión del usuario sobre destino local/S3) — hasta que no se resuelva, `spec.md` sigue en `status: draft`.
 
-**MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs están en `status: implemented` con 568/568 tests verdes y todo commiteado/pusheado en `origin/specs/planificacion`.
+**MVP completo.** No quedan features pendientes según el orden de implementación de `AGENTS.md`. Todas las specs del plan original (001–019) están en `status: implemented`; `020-seguridad-produccion` está implementado en código (592/592 tests verdes) pero sigue en `status: draft` únicamente por la sección de backups bloqueada. Todo commiteado/pusheado en `origin/specs/planificacion`.
 
 ## Cómo navegar si eres un agente retomando esto
 
