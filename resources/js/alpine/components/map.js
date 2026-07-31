@@ -115,10 +115,19 @@ export default function map(center, zoom) {
         map: null,
         markersById: {},
         loadingTiles: true,
+        zoomLevel: zoom,
+        minZoom: 0,
+        maxZoom: 19,
 
         init() {
             this.map = L.map(this.$refs.container, { zoomControl: false, attributionControl: false })
                 .setView([center.lat, center.lon], zoom);
+
+            this.minZoom = this.map.getMinZoom();
+            this.maxZoom = this.map.getMaxZoom();
+            this.map.on('zoomend', () => {
+                this.zoomLevel = this.map.getZoom();
+            });
 
             addTileLayer(this.map, () => {
                 this.loadingTiles = false;
@@ -226,7 +235,7 @@ export function singleMap(center, popupText) {
         loadingTiles: true,
 
         init() {
-            this.map = L.map(this.$refs.container, { attributionControl: false }).setView([center.lat, center.lon], 16);
+            this.map = L.map(this.$refs.container, { zoomControl: false, attributionControl: false }).setView([center.lat, center.lon], 16);
             addTileLayer(this.map, () => {
                 this.loadingTiles = false;
             });

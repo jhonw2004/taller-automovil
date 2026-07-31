@@ -155,13 +155,14 @@
 
 /**
  * Card flotante de detalle: sobreescribe el estilo por defecto (blanco plano, sin sombra propia)
- * del popup de Leaflet. Sin bordes redondeados (feedback explícito del usuario) — a diferencia de
- * otras cards del design system (016), esta usa `border-radius: 0`. El contenido interno
- * (`popoverHtml()` en `map.js`) usa las clases `taller-popover-*`.
+ * del popup de Leaflet por el mismo radio que el resto de las cards flotantes de esta vista
+ * (`--radius-cards`, consistente con el panel de filtros rediseñado estilo Apple Maps). El
+ * contenido interno (`popoverHtml()` en `map.js`) usa las clases `taller-popover-*`.
  */
 .taller-popover .leaflet-popup-content-wrapper {
     padding: 0;
-    border-radius: 0;
+    border-radius: var(--radius-cards);
+    overflow: hidden;
     box-shadow: var(--shadow-md), 0 1px 0 0 var(--color-cloud);
 }
 .taller-popover .leaflet-popup-content {

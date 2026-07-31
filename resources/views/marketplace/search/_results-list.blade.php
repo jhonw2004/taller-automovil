@@ -23,18 +23,22 @@
 <template x-if="!$store.search.loading && !$store.search.error && $store.search.hasSearched && $store.search.results.length === 0">
     <x-empty-state
         title="No encontramos talleres con esos filtros"
-        description="Amplía el radio de búsqueda o quita algún filtro."
+        description="Prueba con otra categoría, otra calificación o quita algún filtro."
     />
 </template>
 
-<div class="flex flex-col gap-12">
+<div
+    class="flex flex-col gap-12"
+    x-on:keydown.down.prevent="$el.querySelector('button:focus')?.nextElementSibling?.focus()"
+    x-on:keydown.up.prevent="$el.querySelector('button:focus')?.previousElementSibling?.focus()"
+>
     <template x-for="taller in $store.search.results" :key="taller.id">
         <button
             type="button"
             x-on:click="$store.search.select(taller.id)"
             x-on:mouseenter="window.dispatchEvent(new CustomEvent('taller:hover', { detail: { id: taller.id } }))"
             x-on:mouseleave="window.dispatchEvent(new CustomEvent('taller:hover', { detail: { id: null } }))"
-            class="w-full rounded-cards border p-20 text-left transition hover:border-obsidian/40"
+            class="w-full rounded-cards border p-20 text-left transition duration-300 hover:-translate-y-4 hover:border-obsidian/40 hover:shadow-md"
             :class="$store.search.selected === taller.id ? 'border-obsidian bg-paper' : 'border-cloud bg-white'"
         >
             <div class="flex items-start justify-between gap-16">

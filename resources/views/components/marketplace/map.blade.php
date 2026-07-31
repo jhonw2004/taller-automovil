@@ -51,8 +51,9 @@
                     <button
                         type="button"
                         x-on:click="zoomIn()"
+                        :disabled="zoomLevel >= maxZoom"
                         aria-label="Acercar"
-                        class="flex size-40 items-center justify-center text-obsidian hover:bg-paper focus:outline-none focus:ring-2 focus:ring-obsidian/30"
+                        class="flex size-40 items-center justify-center text-obsidian hover:bg-paper focus:outline-none focus:ring-2 focus:ring-obsidian/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     >
                         <svg class="size-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" d="M12 5v14M5 12h14"></path>
@@ -62,8 +63,9 @@
                     <button
                         type="button"
                         x-on:click="zoomOut()"
+                        :disabled="zoomLevel <= minZoom"
                         aria-label="Alejar"
-                        class="flex size-40 items-center justify-center text-obsidian hover:bg-paper focus:outline-none focus:ring-2 focus:ring-obsidian/30"
+                        class="flex size-40 items-center justify-center text-obsidian hover:bg-paper focus:outline-none focus:ring-2 focus:ring-obsidian/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     >
                         <svg class="size-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" d="M5 12h14"></path>

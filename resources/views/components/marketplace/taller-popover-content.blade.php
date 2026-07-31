@@ -21,7 +21,7 @@
 
             <p class="pr-24 text-subheading font-semibold text-graphite" x-text="taller.nombre"></p>
 
-            <div class="mt-8 flex flex-wrap gap-6" x-show="taller.categorias?.length">
+            <div class="mt-8 flex flex-wrap gap-8" x-show="taller.categorias?.length">
                 <template x-for="categoria in (taller.categorias ?? []).slice(0, 3)" :key="categoria">
                     <span class="rounded-badges border border-cloud bg-paper px-8 py-4 text-caption text-iron" x-text="categoria"></span>
                 </template>
